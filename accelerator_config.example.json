@@ -24,6 +24,38 @@
       "metadata": {
         "description": "Processed documents in Azure Data Lake Gen2"
       }
+    },
+    {
+      "type": "sharepoint",
+      "tenant_id": "your-tenant-id",
+      "client_id": "your-app-client-id",
+      "client_secret": "your-app-client-secret",
+      "site_url": "https://yourtenant.sharepoint.com/sites/yoursite",
+      "document_library": "Shared Documents",
+      "folder_path": "company-policies",
+      "max_file_size_mb": 100,
+      "supported_extensions": [".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls", ".txt", ".md"],
+      "batch_size": 50,
+      "enable_incremental_sync": true,
+      "metadata": {
+        "description": "Company policies from SharePoint document library"
+      }
+    },
+    {
+      "type": "sharepoint",
+      "tenant_id": "your-tenant-id",
+      "client_id": "your-app-client-id",
+      "client_secret": "your-app-client-secret",
+      "site_url": "https://yourtenant.sharepoint.com/sites/hr",
+      "document_library": "HR Documents",
+      "folder_path": "",
+      "max_file_size_mb": 50,
+      "supported_extensions": [".pdf", ".docx"],
+      "batch_size": 25,
+      "enable_incremental_sync": true,
+      "metadata": {
+        "description": "HR documents from dedicated SharePoint site"
+      }
     }
   ],
   "azure": {

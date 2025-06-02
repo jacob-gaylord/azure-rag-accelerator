@@ -1,0 +1,212 @@
+# SharePoint Configuration Examples
+# =================================
+# This file provides examples for different SharePoint configuration scenarios
+
+# Example 1: Basic SharePoint Configuration
+# -----------------------------------------
+basic_sharepoint:
+  data_sources:
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/documents"
+      metadata:
+        description: "Basic SharePoint document library"
+
+# Example 2: Multiple SharePoint Sites
+# ------------------------------------
+multi_site_sharepoint:
+  data_sources:
+    # HR Documents
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/hr"
+      document_library: "HR Documents"
+      folder_path: "policies"
+      max_file_size_mb: 50
+      supported_extensions: [".pdf", ".docx"]
+      metadata:
+        description: "HR policies and procedures"
+        category: "human-resources"
+
+    # Engineering Documentation
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/engineering"
+      document_library: "Technical Docs"
+      folder_path: "specifications"
+      max_file_size_mb: 200
+      supported_extensions: [".pdf", ".docx", ".pptx", ".md"]
+      metadata:
+        description: "Technical specifications and documentation"
+        category: "technical"
+
+    # Company Policies
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/policies"
+      document_library: "Corporate Policies"
+      folder_path: "current"
+      max_file_size_mb: 25
+      supported_extensions: [".pdf"]
+      batch_size: 10
+      metadata:
+        description: "Current corporate policies"
+        category: "policies"
+
+# Example 3: Large Organization Configuration
+# ------------------------------------------
+enterprise_sharepoint:
+  data_sources:
+    # Main Document Library - High Volume
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/corporate"
+      document_library: "Shared Documents"
+      max_file_size_mb: 500
+      batch_size: 100
+      enable_incremental_sync: true
+      supported_extensions:
+        - ".pdf"
+        - ".docx"
+        - ".doc"
+        - ".pptx"
+        - ".ppt"
+        - ".xlsx"
+        - ".xls"
+        - ".txt"
+        - ".md"
+        - ".rtf"
+      metadata:
+        description: "Main corporate document repository"
+        priority: "high"
+        sync_frequency: "hourly"
+
+  # Azure services configuration for enterprise
+  azure:
+    search_service: "enterprise-search"
+    search_index: "documents-index"
+    storage_account: "enterprisestorage"
+    storage_container: "processed-content"
+    openai_service: "enterprise-openai"
+    openai_deployment: "text-embedding-ada-002"
+    subscription_id: "12345678-1234-1234-1234-123456789012"
+    tenant_id: "12345678-1234-1234-1234-123456789012"
+
+  # Enterprise processing options
+  use_integrated_vectorization: true
+  use_gpt_vision: true
+  use_acls: true
+  use_vectors: true
+  disable_batch_vectors: false
+  verbose: true
+
+# Example 4: Development/Testing Configuration
+# --------------------------------------------
+dev_sharepoint:
+  data_sources:
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET_DEV}"
+      site_url: "https://contoso.sharepoint.com/sites/dev-testing"
+      document_library: "Test Documents"
+      folder_path: "sample-data"
+      max_file_size_mb: 10
+      batch_size: 5
+      enable_incremental_sync: false  # Full sync for testing
+      supported_extensions: [".pdf", ".txt"]
+      metadata:
+        description: "Development testing documents"
+        environment: "development"
+
+# Example 5: Mixed Data Sources (SharePoint + Others)
+# ---------------------------------------------------
+mixed_sources:
+  data_sources:
+    # Local development files
+    - type: local
+      path: "./dev-data/*"
+      metadata:
+        description: "Local development documents"
+
+    # Azure Blob Storage
+    - type: azure_blob
+      storage_account: "devstorageaccount"
+      container: "documents"
+      connection_string: "${AZURE_STORAGE_CONNECTION_STRING}"
+      metadata:
+        description: "Azure Blob Storage documents"
+
+    # SharePoint Online
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/main"
+      document_library: "Shared Documents"
+      metadata:
+        description: "SharePoint documents"
+
+# Example 6: Minimal SharePoint Configuration
+# -------------------------------------------
+minimal_sharepoint:
+  data_sources:
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/minimal"
+      # All other settings will use defaults
+
+# Example 7: SharePoint with Custom Sync State
+# --------------------------------------------
+custom_sync_sharepoint:
+  data_sources:
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/archived"
+      document_library: "Archive"
+      enable_incremental_sync: true
+      sync_state_file: "/app/data/sync_states/archive_sync.json"
+      metadata:
+        description: "Archived documents with custom sync state location"
+
+# Example 8: SharePoint with Specific File Types
+# ----------------------------------------------
+document_specific_sharepoint:
+  data_sources:
+    # PDFs only
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/pdfs"
+      document_library: "PDF Library"
+      supported_extensions: [".pdf"]
+      max_file_size_mb: 50
+      metadata:
+        description: "PDF documents only"
+
+    # Office documents only
+    - type: sharepoint
+      tenant_id: "12345678-1234-1234-1234-123456789012"
+      client_id: "87654321-4321-4321-4321-210987654321"
+      client_secret: "${SHAREPOINT_CLIENT_SECRET}"
+      site_url: "https://contoso.sharepoint.com/sites/office"
+      document_library: "Office Docs"
+      supported_extensions: [".docx", ".pptx", ".xlsx"]
+      max_file_size_mb: 100
+      metadata:
+        description: "Microsoft Office documents only" 

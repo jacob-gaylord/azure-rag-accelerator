@@ -9,20 +9,67 @@ from pathlib import Path
 @dataclass
 class DataSourceConfig:
     """Configuration for a data source"""
-    type: str  # "local", "azure_blob", "adls_gen2"
+    type: str  # "local", "azure_blob", "adls_gen2", "sharepoint"
     path: Optional[str] = None
+    
     # Azure Blob Storage specific
     storage_account: Optional[str] = None
     container: Optional[str] = None
     blob_prefix: Optional[str] = None
+    
     # ADLS Gen2 specific
     filesystem: Optional[str] = None
-    # Authentication
+    
+    # SharePoint specific
+    tenant_id: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    site_url: Optional[str] = None
+    document_library: Optional[str] = None
+    folder_path: Optional[str] = None
+    max_file_size_mb: Optional[int] = None
+    supported_extensions: Optional[List[str]] = None
+    batch_size: Optional[int] = None
+    enable_incremental_sync: Optional[bool] = None
+    sync_state_file: Optional[str] = None
+    
+    # Authentication (common)
     connection_string: Optional[str] = None
     account_key: Optional[str] = None
     sas_token: Optional[str] = None
+    
     # Additional metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    def validate(self) -> bool:
+        """Validate configuration based on data source type"""
+        if self.type == "local":
+            return self.path is not None
+        elif self.type == "azure_blob":
+            return (self.storage_account is not None and 
+                    self.container is not None and
+                    (self.connection_string or self.account_key or self.sas_token))
+        elif self.type == "adls_gen2":
+            return (self.storage_account is not None and 
+                    self.filesystem is not None and
+                    (self.connection_string or self.account_key))
+        elif self.type == "sharepoint":
+            required_fields = [self.tenant_id, self.client_id, self.client_secret, self.site_url]
+            return all(field is not None for field in required_fields)
+        else:
+            return False
+    
+    def get_sharepoint_defaults(self) -> Dict[str, Any]:
+        """Get default values for SharePoint configuration"""
+        return {
+            "document_library": "Shared Documents",
+            "folder_path": "",
+            "max_file_size_mb": 100,
+            "supported_extensions": [".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls", ".txt", ".md"],
+            "batch_size": 50,
+            "enable_incremental_sync": True,
+            "sync_state_file": f".sharepoint_sync_{hash(self.site_url) if self.site_url else 'default'}.json"
+        }
 
 
 @dataclass
@@ -131,6 +178,21 @@ class ConfigurationManager:
         # Create data source from environment
         data_sources = []
         
+        # Check for SharePoint configuration
+        if os.getenv("SHAREPOINT_TENANT_ID"):
+            sharepoint_config = DataSourceConfig(
+                type="sharepoint",
+                tenant_id=os.getenv("SHAREPOINT_TENANT_ID"),
+                client_id=os.getenv("SHAREPOINT_CLIENT_ID"),
+                client_secret=os.getenv("SHAREPOINT_CLIENT_SECRET"),
+                site_url=os.getenv("SHAREPOINT_SITE_URL"),
+                document_library=os.getenv("SHAREPOINT_DOCUMENT_LIBRARY", "Shared Documents"),
+                folder_path=os.getenv("SHAREPOINT_FOLDER_PATH", ""),
+                max_file_size_mb=int(os.getenv("SHAREPOINT_MAX_FILE_SIZE_MB", "100")),
+                enable_incremental_sync=os.getenv("SHAREPOINT_ENABLE_INCREMENTAL_SYNC", "true").lower() == "true"
+            )
+            data_sources.append(sharepoint_config)
+        
         # Check for ADLS Gen2 configuration
         if os.getenv("AZURE_ADLS_GEN2_STORAGE_ACCOUNT"):
             data_sources.append(DataSourceConfig(
@@ -139,6 +201,18 @@ class ConfigurationManager:
                 filesystem=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM"),
                 path=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM_PATH"),
                 account_key=os.getenv("AZURE_ADLS_GEN2_KEY")
+            ))
+        
+        # Check for Azure Blob Storage configuration
+        if os.getenv("AZURE_STORAGE_ACCOUNT") and os.getenv("AZURE_STORAGE_CONTAINER"):
+            data_sources.append(DataSourceConfig(
+                type="azure_blob",
+                storage_account=os.getenv("AZURE_STORAGE_ACCOUNT"),
+                container=os.getenv("AZURE_STORAGE_CONTAINER"),
+                blob_prefix=os.getenv("AZURE_STORAGE_BLOB_PREFIX"),
+                connection_string=os.getenv("AZURE_STORAGE_CONNECTION_STRING"),
+                account_key=os.getenv("AZURE_STORAGE_KEY"),
+                sas_token=os.getenv("AZURE_STORAGE_SAS_TOKEN")
             ))
         
         # Default to local files if no other source specified
@@ -182,7 +256,25 @@ class ConfigurationManager:
         # Parse data sources
         data_sources = []
         for ds_data in data.get("data_sources", []):
-            data_sources.append(DataSourceConfig(**ds_data))
+            # Create DataSourceConfig with defaults applied for SharePoint
+            if ds_data.get("type") == "sharepoint":
+                # Apply SharePoint defaults
+                sharepoint_defaults = {
+                    "document_library": "Shared Documents",
+                    "folder_path": "",
+                    "max_file_size_mb": 100,
+                    "supported_extensions": [".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls", ".txt", ".md"],
+                    "batch_size": 50,
+                    "enable_incremental_sync": True
+                }
+                # Merge defaults with provided config
+                merged_config = {**sharepoint_defaults, **ds_data}
+                # Generate sync state file if not provided
+                if "sync_state_file" not in merged_config and merged_config.get("site_url"):
+                    merged_config["sync_state_file"] = f".sharepoint_sync_{hash(merged_config['site_url'])}.json"
+                data_sources.append(DataSourceConfig(**merged_config))
+            else:
+                data_sources.append(DataSourceConfig(**ds_data))
         
         # Parse Azure configuration
         azure_data = data.get("azure", {})
@@ -214,6 +306,26 @@ class ConfigurationManager:
         if os.getenv("AZURE_OPENAI_ENDPOINT"):
             config.azure.openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         
+        # SharePoint data source overrides
+        for ds in config.data_sources:
+            if ds.type == "sharepoint":
+                if os.getenv("SHAREPOINT_TENANT_ID"):
+                    ds.tenant_id = os.getenv("SHAREPOINT_TENANT_ID")
+                if os.getenv("SHAREPOINT_CLIENT_ID"):
+                    ds.client_id = os.getenv("SHAREPOINT_CLIENT_ID")
+                if os.getenv("SHAREPOINT_CLIENT_SECRET"):
+                    ds.client_secret = os.getenv("SHAREPOINT_CLIENT_SECRET")
+                if os.getenv("SHAREPOINT_SITE_URL"):
+                    ds.site_url = os.getenv("SHAREPOINT_SITE_URL")
+                if os.getenv("SHAREPOINT_DOCUMENT_LIBRARY"):
+                    ds.document_library = os.getenv("SHAREPOINT_DOCUMENT_LIBRARY")
+                if os.getenv("SHAREPOINT_FOLDER_PATH"):
+                    ds.folder_path = os.getenv("SHAREPOINT_FOLDER_PATH")
+                if os.getenv("SHAREPOINT_MAX_FILE_SIZE_MB"):
+                    ds.max_file_size_mb = int(os.getenv("SHAREPOINT_MAX_FILE_SIZE_MB"))
+                if os.getenv("SHAREPOINT_ENABLE_INCREMENTAL_SYNC"):
+                    ds.enable_incremental_sync = os.getenv("SHAREPOINT_ENABLE_INCREMENTAL_SYNC", "").lower() == "true"
+        
         # Processing option overrides
         if os.getenv("USE_FEATURE_INT_VECTORIZATION"):
             config.use_integrated_vectorization = os.getenv("USE_FEATURE_INT_VECTORIZATION", "").lower() == "true"
@@ -232,13 +344,29 @@ class ConfigurationManager:
                 {
                     "type": ds.type,
                     "path": ds.path,
+                    # Azure Blob Storage fields
                     "storage_account": ds.storage_account,
                     "container": ds.container,
                     "blob_prefix": ds.blob_prefix,
+                    # ADLS Gen2 fields
                     "filesystem": ds.filesystem,
+                    # SharePoint fields
+                    "tenant_id": ds.tenant_id,
+                    "client_id": ds.client_id,
+                    "client_secret": ds.client_secret,
+                    "site_url": ds.site_url,
+                    "document_library": ds.document_library,
+                    "folder_path": ds.folder_path,
+                    "max_file_size_mb": ds.max_file_size_mb,
+                    "supported_extensions": ds.supported_extensions,
+                    "batch_size": ds.batch_size,
+                    "enable_incremental_sync": ds.enable_incremental_sync,
+                    "sync_state_file": ds.sync_state_file,
+                    # Authentication fields
                     "connection_string": ds.connection_string,
                     "account_key": ds.account_key,
                     "sas_token": ds.sas_token,
+                    # Metadata
                     "metadata": ds.metadata
                 }
                 for ds in config.data_sources
