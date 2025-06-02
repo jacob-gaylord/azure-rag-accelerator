@@ -21,6 +21,7 @@ param searchServiceName string = '' // Set in main.parameters.json
 param searchServiceResourceGroupName string = '' // Set in main.parameters.json
 param searchServiceLocation string = '' // Set in main.parameters.json
 // The free tier does not support managed identity (required) or semantic search (optional)
+@description('The SKU name for the Azure AI Search service. Standard tier is recommended for production workloads.')
 @allowed(['free', 'basic', 'standard', 'standard2', 'standard3', 'storage_optimized_l1', 'storage_optimized_l2'])
 param searchServiceSkuName string // Set in main.parameters.json
 param searchIndexName string // Set in main.parameters.json
@@ -143,10 +144,15 @@ param computerVisionSkuName string // Set in main.parameters.json
 param contentUnderstandingServiceName string = '' // Set in main.parameters.json
 param contentUnderstandingResourceGroupName string = '' // Set in main.parameters.json
 
+@description('The name of the chat GPT model to deploy (e.g., gpt-4o-mini, gpt-35-turbo)')
 param chatGptModelName string = ''
+@description('The deployment name for the chat GPT model')
 param chatGptDeploymentName string = ''
+@description('The version of the chat GPT model to deploy')
 param chatGptDeploymentVersion string = ''
+@description('The SKU name for the chat GPT deployment (e.g., GlobalStandard, Standard)')
 param chatGptDeploymentSkuName string = ''
+@description('The capacity (TPM) for the chat GPT deployment')
 param chatGptDeploymentCapacity int = 0
 
 var chatGpt = {
@@ -157,11 +163,17 @@ var chatGpt = {
   deploymentCapacity: chatGptDeploymentCapacity != 0 ? chatGptDeploymentCapacity : 30
 }
 
+@description('The name of the embedding model to deploy (e.g., text-embedding-3-large, text-embedding-ada-002)')
 param embeddingModelName string = ''
+@description('The deployment name for the embedding model')
 param embeddingDeploymentName string = ''
+@description('The version of the embedding model to deploy')
 param embeddingDeploymentVersion string = ''
+@description('The SKU name for the embedding deployment (e.g., GlobalStandard, Standard)')
 param embeddingDeploymentSkuName string = ''
+@description('The capacity (TPM) for the embedding deployment')
 param embeddingDeploymentCapacity int = 0
+@description('The number of dimensions for the embedding model (e.g., 3072 for text-embedding-3-large)')
 param embeddingDimensions int = 0
 var embedding = {
   modelName: !empty(embeddingModelName) ? embeddingModelName : 'text-embedding-3-large'

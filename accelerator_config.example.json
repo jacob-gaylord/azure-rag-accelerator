@@ -1,0 +1,53 @@
+{
+  "data_sources": [
+    {
+      "type": "local",
+      "path": "./data/*",
+      "metadata": {
+        "description": "Local sample documents"
+      }
+    },
+    {
+      "type": "azure_blob",
+      "storage_account": "mystorageaccount",
+      "container": "documents",
+      "blob_prefix": "company-docs/",
+      "metadata": {
+        "description": "Company documents in Azure Blob Storage"
+      }
+    },
+    {
+      "type": "adls_gen2",
+      "storage_account": "mydatalakeaccount",
+      "filesystem": "documents",
+      "path": "processed/",
+      "metadata": {
+        "description": "Processed documents in Azure Data Lake Gen2"
+      }
+    }
+  ],
+  "azure": {
+    "search_service": "my-search-service",
+    "search_index": "documents-index",
+    "storage_account": "mystorageaccount",
+    "storage_container": "content",
+    "openai_service": "my-openai-service",
+    "openai_endpoint": "https://my-openai-service.openai.azure.com/",
+    "openai_deployment": "text-embedding-ada-002",
+    "openai_model": "text-embedding-ada-002",
+    "openai_api_version": "2024-06-01",
+    "document_intelligence_service": "my-doc-intelligence",
+    "subscription_id": "your-subscription-id",
+    "tenant_id": "your-tenant-id"
+  },
+  "use_integrated_vectorization": false,
+  "use_gpt_vision": false,
+  "use_acls": false,
+  "use_vectors": true,
+  "use_local_pdf_parser": false,
+  "use_local_html_parser": false,
+  "disable_batch_vectors": false,
+  "default_category": "general",
+  "skip_blobs": false,
+  "verbose": true
+} 

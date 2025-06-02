@@ -13,6 +13,7 @@ from azure.core.credentials_async import AsyncTokenCredential
 from azure.storage.filedatalake.aio import (
     DataLakeServiceClient,
 )
+from azure.storage.blob.aio import BlobServiceClient
 
 logger = logging.getLogger("scripts")
 
@@ -110,6 +111,64 @@ class LocalListFileStrategy(ListFileStrategy):
             md5_f.write(existing_hash)
 
         return False
+
+
+class AzureBlobListFileStrategy(ListFileStrategy):
+    """
+    Concrete strategy for listing files that are located in Azure Blob Storage
+    """
+
+    def __init__(
+        self,
+        storage_account: str,
+        container: str,
+        blob_prefix: Optional[str] = None,
+        credential: Union[AsyncTokenCredential, str, None] = None,
+    ):
+        self.storage_account = storage_account
+        self.container = container
+        self.blob_prefix = blob_prefix or ""
+        self.credential = credential
+
+    async def list_paths(self) -> AsyncGenerator[str, None]:
+        account_url = f"https://{self.storage_account}.blob.core.windows.net"
+        
+        async with BlobServiceClient(account_url=account_url, credential=self.credential) as blob_service_client:
+            container_client = blob_service_client.get_container_client(self.container)
+            
+            async for blob in container_client.list_blobs(name_starts_with=self.blob_prefix):
+                # Skip directories (blobs ending with /)
+                if not blob.name.endswith('/'):
+                    yield blob.name
+
+    async def list(self) -> AsyncGenerator[File, None]:
+        account_url = f"https://{self.storage_account}.blob.core.windows.net"
+        
+        async with BlobServiceClient(account_url=account_url, credential=self.credential) as blob_service_client:
+            container_client = blob_service_client.get_container_client(self.container)
+            
+            async for blob_name in self.list_paths():
+                temp_file_path = os.path.join(tempfile.gettempdir(), os.path.basename(blob_name))
+                try:
+                    blob_client = container_client.get_blob_client(blob_name)
+                    
+                    # Download blob to temporary file
+                    with open(temp_file_path, "wb") as temp_file:
+                        download_stream = await blob_client.download_blob()
+                        async for chunk in download_stream.chunks():
+                            temp_file.write(chunk)
+                    
+                    # Create File object with blob URL
+                    blob_url = blob_client.url
+                    yield File(content=open(temp_file_path, "rb"), url=blob_url)
+                    
+                except Exception as blob_exception:
+                    logger.error(f"\tGot an error while reading {blob_name} -> {blob_exception} --> skipping file")
+                    try:
+                        if os.path.exists(temp_file_path):
+                            os.remove(temp_file_path)
+                    except Exception as file_delete_exception:
+                        logger.error(f"\tGot an error while deleting {temp_file_path} -> {file_delete_exception}")
 
 
 class ADLSGen2ListFileStrategy(ListFileStrategy):

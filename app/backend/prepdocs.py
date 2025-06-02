@@ -35,6 +35,10 @@ from prepdocslib.strategy import DocumentAction, SearchInfo, Strategy
 from prepdocslib.textparser import TextParser
 from prepdocslib.textsplitter import SentenceTextSplitter, SimpleTextSplitter
 
+# New imports for configuration system
+from prepdocslib.config import get_configuration_manager, IngestionConfig, DataSourceConfig
+from prepdocslib.datasourceconnector import DataSourceConnectorFactory, MultiDataSourceConnector
+
 logger = logging.getLogger("scripts")
 
 
@@ -43,6 +47,63 @@ def clean_key_if_exists(key: Union[str, None]) -> Union[str, None]:
     if key is not None and key.strip() != "":
         return key.strip()
     return None
+
+
+async def setup_from_config(
+    config: IngestionConfig,
+    azure_credential: AsyncTokenCredential,
+    args: argparse.Namespace
+) -> tuple[SearchInfo, BlobManager, ListFileStrategy]:
+    """Setup components using configuration instead of individual parameters"""
+    
+    # Setup search info
+    search_key = clean_key_if_exists(args.searchkey) if hasattr(args, 'searchkey') else None
+    search_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
+        azure_credential if search_key is None else AzureKeyCredential(search_key)
+    )
+    
+    search_info = SearchInfo(
+        endpoint=f"https://{config.azure.search_service}.search.windows.net/",
+        credential=search_creds,
+        index_name=config.azure.search_index,
+        # These would come from config in a full implementation
+        agent_name=os.getenv("AZURE_SEARCH_AGENT"),
+        agent_max_output_tokens=int(os.getenv("AZURE_SEARCH_AGENT_MAX_OUTPUT_TOKENS", 10000)),
+        use_agentic_retrieval=os.getenv("USE_AGENTIC_RETRIEVAL", "").lower() == "true",
+        azure_openai_endpoint=config.azure.openai_endpoint,
+        azure_openai_searchagent_model=os.getenv("AZURE_OPENAI_SEARCHAGENT_MODEL"),
+        azure_openai_searchagent_deployment=os.getenv("AZURE_OPENAI_SEARCHAGENT_DEPLOYMENT"),
+    )
+    
+    # Setup blob manager
+    storage_key = clean_key_if_exists(args.storagekey) if hasattr(args, 'storagekey') else None
+    storage_creds: Union[AsyncTokenCredential, str] = azure_credential if storage_key is None else storage_key
+    blob_manager = BlobManager(
+        endpoint=f"https://{config.azure.storage_account}.blob.core.windows.net",
+        container=config.azure.storage_container,
+        account=config.azure.storage_account,
+        credential=storage_creds,
+        resourceGroup=config.azure.storage_resource_group,
+        subscriptionId=config.azure.subscription_id,
+        store_page_images=config.use_gpt_vision,
+    )
+    
+    # Setup data source connector using the new factory
+    if len(config.data_sources) == 1:
+        # Single data source
+        list_file_strategy = DataSourceConnectorFactory.create_connector(
+            config.data_sources[0], 
+            azure_credential
+        )
+    else:
+        # Multiple data sources - use the primary one for now
+        # In a full implementation, we might want to handle multiple sources differently
+        multi_connector = MultiDataSourceConnector(config.data_sources, azure_credential)
+        list_file_strategy = multi_connector.get_primary_connector()
+        if list_file_strategy is None:
+            raise ValueError("No valid data sources configured")
+    
+    return search_info, blob_manager, list_file_strategy
 
 
 async def setup_search_info(
@@ -358,36 +419,23 @@ if __name__ == "__main__":
     if openai_host != "azure" and use_agentic_retrieval:
         raise Exception("Agentic retrieval requires an Azure OpenAI chat completion service")
 
-    search_info = loop.run_until_complete(
-        setup_search_info(
-            search_service=os.environ["AZURE_SEARCH_SERVICE"],
-            index_name=os.environ["AZURE_SEARCH_INDEX"],
-            use_agentic_retrieval=use_agentic_retrieval,
-            agent_name=os.getenv("AZURE_SEARCH_AGENT"),
-            agent_max_output_tokens=int(os.getenv("AZURE_SEARCH_AGENT_MAX_OUTPUT_TOKENS", 10000)),
-            azure_openai_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            azure_openai_searchagent_deployment=os.getenv("AZURE_OPENAI_SEARCHAGENT_DEPLOYMENT"),
-            azure_openai_searchagent_model=os.getenv("AZURE_OPENAI_SEARCHAGENT_MODEL"),
+    # Load configuration
+    config_manager = get_configuration_manager()
+    config = config_manager.load_config()
+    
+    # Override data source if files argument is provided (for backward compatibility)
+    if args.files:
+        # Create a temporary local data source configuration
+        local_config = DataSourceConfig(type="local", path=args.files)
+        config.data_sources = [local_config]
+        logger.info("Using command line files argument: %s", args.files)
+
+    search_info, blob_manager, list_file_strategy = loop.run_until_complete(
+        setup_from_config(
+            config=config,
             azure_credential=azd_credential,
-            search_key=clean_key_if_exists(args.searchkey),
+            args=args
         )
-    )
-    blob_manager = setup_blob_manager(
-        azure_credential=azd_credential,
-        storage_account=os.environ["AZURE_STORAGE_ACCOUNT"],
-        storage_container=os.environ["AZURE_STORAGE_CONTAINER"],
-        storage_resource_group=os.environ["AZURE_STORAGE_RESOURCE_GROUP"],
-        subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
-        search_images=use_gptvision,
-        storage_key=clean_key_if_exists(args.storagekey),
-    )
-    list_file_strategy = setup_list_file_strategy(
-        azure_credential=azd_credential,
-        local_files=args.files,
-        datalake_storage_account=os.getenv("AZURE_ADLS_GEN2_STORAGE_ACCOUNT"),
-        datalake_filesystem=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM"),
-        datalake_path=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM_PATH"),
-        datalake_key=clean_key_if_exists(args.datalakekey),
     )
 
     openai_host = os.environ["OPENAI_HOST"]
