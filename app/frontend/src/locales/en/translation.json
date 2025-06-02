@@ -191,5 +191,61 @@
         "submitError": "Failed to submit feedback. Please try again.",
         "pleaseSelectRating": "Please select a rating before submitting.",
         "commentTooLong": "Comment must be 1000 characters or less."
+    },
+
+    "adminTitle": "Admin Dashboard",
+    "admin": {
+        "title": "Admin Dashboard",
+        "loading": "Loading dashboard data...",
+        "metrics": {
+            "totalFeedback": "Total Feedback",
+            "avgRating": "Average Rating",
+            "totalSessions": "Total Sessions",
+            "totalMessages": "Total Messages"
+        },
+        "tabs": {
+            "analytics": "Analytics",
+            "feedback": "Feedback",
+            "chatHistory": "Chat History"
+        },
+        "charts": {
+            "feedbackTrends": "Feedback Trends Over Time",
+            "ratingDistribution": "Rating Distribution",
+            "feedbackCount": "Feedback Count",
+            "avgRating": "Average Rating"
+        },
+        "columns": {
+            "timestamp": "Date",
+            "rating": "Rating",
+            "user": "User",
+            "session": "Session",
+            "comment": "Comment",
+            "messages": "Messages",
+            "duration": "Duration",
+            "lastMessage": "Last Message"
+        },
+        "filters": {
+            "searchPlaceholder": "Search feedback...",
+            "searchChatPlaceholder": "Search chat history...",
+            "ratingPlaceholder": "Filter by rating",
+            "datePlaceholder": "Filter by date",
+            "allRatings": "All Ratings"
+        },
+        "actions": {
+            "refresh": "Refresh",
+            "export": "Export",
+            "retry": "Retry"
+        },
+        "export": {
+            "title": "Export Data",
+            "description": "Choose the data type and format for export",
+            "type": "Data Type",
+            "format": "Format",
+            "feedback": "Feedback Data",
+            "chatHistory": "Chat History",
+            "download": "Download",
+            "cancel": "Cancel"
+        },
+        "noComment": "No comment"
     }
 }

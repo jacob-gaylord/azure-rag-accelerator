@@ -480,47 +480,100 @@ export async function getFeedbackByMessageApi(messageId: string, idToken: string
 }
 
 export async function updateFeedbackApi(feedbackId: string, request: Partial<FeedbackRequest>, idToken: string): Promise<{ message: string }> {
-    try {
-        const headers = await getHeaders(idToken);
-        const response = await fetch(`${BACKEND_URI}/feedback/${feedbackId}`, {
-            method: "PUT",
-            headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify(request)
-        });
+    const headers = await getHeaders(idToken);
 
-        if (!response.ok) {
-            // Handle specific error cases
-            if (response.status === 429) {
-                throw new Error("Rate limit exceeded. Please wait a moment before updating feedback again.");
-            } else if (response.status === 401) {
-                throw new Error("Authentication required. Please log in again.");
-            } else if (response.status === 400) {
-                // Try to get the specific error message from the response
-                try {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || "Invalid feedback data. Please check your input.");
-                } catch {
-                    throw new Error("Invalid feedback data. Please check your input.");
-                }
-            } else if (response.status === 403) {
-                throw new Error("You don't have permission to update this feedback.");
-            } else if (response.status === 404) {
-                throw new Error("Feedback not found. It may have been deleted.");
-            } else if (response.status >= 500) {
-                throw new Error("Server error. Please try again later.");
-            } else {
-                throw new Error(`Updating feedback failed: ${response.statusText}`);
-            }
-        }
+    const response = await fetch(`${BACKEND_URI}/feedback/${feedbackId}`, {
+        method: "PUT",
+        headers: {
+            ...headers,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(request)
+    });
 
-        const dataResponse: { message: string } = await response.json();
-        return dataResponse;
-    } catch (error) {
-        // Handle network errors
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-            throw new Error("Network error. Please check your connection and try again.");
-        }
-        // Re-throw other errors as-is
-        throw error;
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update feedback: ${response.status} - ${errorText}`);
     }
+
+    return await response.json();
+}
+
+// Admin Dashboard API Functions
+export async function getAdminAnalyticsApi(idToken: string | undefined): Promise<any> {
+    const headers = await getHeaders(idToken);
+
+    const response = await fetch(`${BACKEND_URI}/admin/analytics`, {
+        method: "GET",
+        headers
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch admin analytics: ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+export async function getAdminFeedbackApi(idToken: string | undefined): Promise<any[]> {
+    const headers = await getHeaders(idToken);
+
+    const response = await fetch(`${BACKEND_URI}/admin/feedback`, {
+        method: "GET",
+        headers
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch admin feedback data: ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+export async function getAdminChatHistoryApi(idToken: string | undefined): Promise<any[]> {
+    const headers = await getHeaders(idToken);
+
+    const response = await fetch(`${BACKEND_URI}/admin/chat-history`, {
+        method: "GET",
+        headers
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch admin chat history: ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+export async function exportDataApi(dataType: string, format: string, data: any[], idToken: string | undefined): Promise<void> {
+    const headers = await getHeaders(idToken);
+
+    const response = await fetch(`${BACKEND_URI}/admin/export`, {
+        method: "POST",
+        headers: {
+            ...headers,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            dataType,
+            format,
+            data
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to export data: ${response.status}`);
+    }
+
+    // Download the file
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = `${dataType}_export.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
 }
