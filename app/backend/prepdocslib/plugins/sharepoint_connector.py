@@ -15,9 +15,7 @@ from urllib.parse import urlparse, unquote
 
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.identity.aio import ClientSecretCredential, DefaultAzureCredential
-from msgraph_core import BaseGraphRequestAdapter
-from msgraph_core.authentication import AzureIdentityAuthenticationProvider
-from msgraph_core.authentication.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
+from msgraph_core import BaseGraphRequestAdapter, AzureIdentityAuthenticationProvider
 from msgraph import GraphServiceClient
 
 from ..plugin_base import DataSourceConnector, DataSourcePlugin, DataSourceMetadata, ConnectionInfo
