@@ -135,3 +135,28 @@ export type HistoryApiResponse = {
         response: string;
     }[];
 };
+
+export type FeedbackRequest = {
+    sessionId: string;
+    messageId: string;
+    rating: number;
+    comment?: string;
+};
+
+export type FeedbackResponse = {
+    id: string;
+    message: string;
+};
+
+export type FeedbackData = {
+    id: string;
+    sessionId: string;
+    messageId: string;
+    rating: number;
+    comment?: string;
+    timestamp: string;
+};
+
+export type FeedbackApiResponse = {
+    feedback: FeedbackData[];
+};

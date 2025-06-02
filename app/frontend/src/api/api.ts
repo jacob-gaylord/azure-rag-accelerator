@@ -1,6 +1,17 @@
 const BACKEND_URI = "";
 
-import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, Config, SimpleAPIResponse, HistoryListApiResponse, HistoryApiResponse } from "./models";
+import {
+    ChatAppResponse,
+    ChatAppResponseOrError,
+    ChatAppRequest,
+    Config,
+    SimpleAPIResponse,
+    HistoryListApiResponse,
+    HistoryApiResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    FeedbackApiResponse
+} from "./models";
 import { useLogin, getToken, isUsingAppServicesLogin } from "../authConfig";
 
 export async function getHeaders(idToken: string | undefined): Promise<Record<string, string>> {
@@ -188,4 +199,51 @@ export async function deleteChatHistoryApi(id: string, idToken: string): Promise
     if (!response.ok) {
         throw new Error(`Deleting chat history failed: ${response.statusText}`);
     }
+}
+
+export async function submitFeedbackApi(request: FeedbackRequest, idToken: string): Promise<FeedbackResponse> {
+    const headers = await getHeaders(idToken);
+    const response = await fetch(`${BACKEND_URI}/feedback`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Submitting feedback failed: ${response.statusText}`);
+    }
+
+    const dataResponse: FeedbackResponse = await response.json();
+    return dataResponse;
+}
+
+export async function getFeedbackByMessageApi(messageId: string, idToken: string): Promise<FeedbackApiResponse> {
+    const headers = await getHeaders(idToken);
+    const response = await fetch(`${BACKEND_URI}/feedback/message/${messageId}`, {
+        method: "GET",
+        headers: { ...headers, "Content-Type": "application/json" }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Getting feedback failed: ${response.statusText}`);
+    }
+
+    const dataResponse: FeedbackApiResponse = await response.json();
+    return dataResponse;
+}
+
+export async function updateFeedbackApi(feedbackId: string, request: Partial<FeedbackRequest>, idToken: string): Promise<{ message: string }> {
+    const headers = await getHeaders(idToken);
+    const response = await fetch(`${BACKEND_URI}/feedback/${feedbackId}`, {
+        method: "PUT",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Updating feedback failed: ${response.statusText}`);
+    }
+
+    const dataResponse: { message: string } = await response.json();
+    return dataResponse;
 }

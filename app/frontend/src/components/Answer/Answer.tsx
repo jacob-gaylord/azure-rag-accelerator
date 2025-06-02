@@ -12,6 +12,7 @@ import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
 import { SpeechOutputBrowser } from "./SpeechOutputBrowser";
 import { SpeechOutputAzure } from "./SpeechOutputAzure";
+import { FeedbackButtons } from "./FeedbackButtons";
 
 interface Props {
     answer: ChatAppResponse;
@@ -26,6 +27,8 @@ interface Props {
     showFollowupQuestions?: boolean;
     showSpeechOutputBrowser?: boolean;
     showSpeechOutputAzure?: boolean;
+    messageId?: string;
+    sessionId?: string;
 }
 
 export const Answer = ({
@@ -40,7 +43,9 @@ export const Answer = ({
     onFollowupQuestionClicked,
     showFollowupQuestions,
     showSpeechOutputAzure,
-    showSpeechOutputBrowser
+    showSpeechOutputBrowser,
+    messageId,
+    sessionId
 }: Props) => {
     const followupQuestions = answer.context?.followup_questions;
     const parsedAnswer = useMemo(() => parseAnswerToHtml(answer, isStreaming, onCitationClicked), [answer]);
@@ -132,6 +137,13 @@ export const Answer = ({
                             );
                         })}
                     </Stack>
+                </Stack.Item>
+            )}
+
+            {/* Feedback buttons - only show when messageId and sessionId are available */}
+            {messageId && sessionId && (
+                <Stack.Item>
+                    <FeedbackButtons messageId={messageId} sessionId={sessionId} isStreaming={isStreaming} />
                 </Stack.Item>
             )}
         </Stack>

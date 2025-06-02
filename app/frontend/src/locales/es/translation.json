@@ -166,5 +166,21 @@
         "useOidSecurityFilter": "Filtra los resultados de búsqueda en función del OID del usuario autenticado.",
         "useGroupsSecurityFilter": "Filtra los resultados de búsqueda en función de los grupos del usuario autenticado.",
         "useAgenticRetrieval": "Use agentic retrieval from Azure AI Search for multi-query planning. Always uses semantic ranker."
+    },
+
+    "feedback": {
+        "thumbsUp": "Me gusta",
+        "thumbsDown": "No me gusta",
+        "starRating": "Califica esta respuesta",
+        "commentPlaceholder": "Cuéntanos más sobre tu experiencia (opcional)",
+        "commentLabel": "Comentario de retroalimentación",
+        "addComment": "Agregar comentario",
+        "submit": "Enviar",
+        "submitting": "Enviando...",
+        "cancel": "Cancelar",
+        "submitSuccess": "¡Gracias por tu retroalimentación!",
+        "submitError": "Error al enviar la retroalimentación. Por favor, inténtalo de nuevo.",
+        "pleaseSelectRating": "Por favor, selecciona una calificación antes de enviar.",
+        "commentTooLong": "El comentario debe tener 1000 caracteres o menos."
     }
 }

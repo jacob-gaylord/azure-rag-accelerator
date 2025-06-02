@@ -1,0 +1,199 @@
+.feedbackContainer {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    transition: all 0.2s ease-in-out;
+}
+
+.feedbackContainer:hover {
+    background-color: #f5f5f5;
+    border-color: #d0d0d0;
+}
+
+.feedbackButtons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.thumbButton {
+    border: 1px solid #d0d0d0;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    background-color: white;
+}
+
+.thumbButton:hover {
+    border-color: #106ebe;
+    transform: scale(1.05);
+}
+
+.thumbSelected {
+    background-color: #106ebe;
+    color: white;
+    border-color: #106ebe;
+}
+
+.thumbSelected:hover {
+    background-color: #0e5a9d;
+    border-color: #0e5a9d;
+}
+
+.starRating {
+    margin-left: 8px;
+}
+
+.starRating .ms-Rating-button {
+    transition: all 0.15s ease-in-out;
+}
+
+.starRating .ms-Rating-button:hover {
+    transform: scale(1.1);
+}
+
+.commentSection {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+}
+
+.commentField {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.commentActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.characterCount {
+    font-size: 12px;
+    color: #666;
+}
+
+.quickActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.errorMessage {
+    color: #d32f2f;
+    font-size: 14px;
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #ffeaea;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.successMessage {
+    color: #2e7d32;
+    font-size: 14px;
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #e8f5e8;
+    border: 1px solid #c8e6c9;
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Accessibility improvements */
+.thumbButton:focus,
+.starRating .ms-Rating-button:focus {
+    outline: 2px solid #106ebe;
+    outline-offset: 2px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .feedbackButtons {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .commentActions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .quickActions {
+        justify-content: flex-start;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .feedbackContainer {
+        border-width: 2px;
+    }
+
+    .thumbButton {
+        border-width: 2px;
+    }
+
+    .errorMessage,
+    .successMessage {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .thumbButton,
+    .starRating .ms-Rating-button {
+        transition: none;
+        transform: none;
+    }
+
+    .commentSection {
+        animation: none;
+    }
+
+    .errorMessage,
+    .successMessage {
+        animation: none;
+    }
+}

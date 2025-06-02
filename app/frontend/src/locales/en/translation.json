@@ -175,5 +175,21 @@
         "useOidSecurityFilter": "Filter search results based on the authenticated user's OID.",
         "useGroupsSecurityFilter": "Filter search results based on the authenticated user's groups.",
         "useAgenticRetrieval": "Use agentic retrieval from Azure AI Search for multi-query planning. Always uses semantic ranker."
+    },
+
+    "feedback": {
+        "thumbsUp": "Thumbs up",
+        "thumbsDown": "Thumbs down",
+        "starRating": "Rate this response",
+        "commentPlaceholder": "Tell us more about your experience (optional)",
+        "commentLabel": "Feedback comment",
+        "addComment": "Add comment",
+        "submit": "Submit",
+        "submitting": "Submitting...",
+        "cancel": "Cancel",
+        "submitSuccess": "Thank you for your feedback!",
+        "submitError": "Failed to submit feedback. Please try again.",
+        "pleaseSelectRating": "Please select a rating before submitting.",
+        "commentTooLong": "Comment must be 1000 characters or less."
     }
 }
