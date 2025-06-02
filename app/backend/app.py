@@ -925,3 +925,224 @@ def create_app():
             cors(app, allow_origin=allowed_origins, allow_methods=["GET", "POST"])
 
     return app
+
+
+# Admin Dashboard API Endpoints
+@bp.route("/admin/analytics", methods=["GET"])
+@authenticated
+async def admin_analytics(auth_claims: dict[str, Any]):
+    """
+    Get analytics data for the admin dashboard
+    """
+    try:
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        
+        # Basic analytics - in a real implementation, you'd query your database
+        analytics_data = {
+            "totalFeedback": 150,
+            "avgRating": 4.2,
+            "totalSessions": 85,
+            "totalMessages": 420,
+            "feedbackTrends": [
+                {"date": "2024-01-01", "count": 12, "avgRating": 4.1},
+                {"date": "2024-01-02", "count": 15, "avgRating": 4.3},
+                {"date": "2024-01-03", "count": 18, "avgRating": 4.0},
+                {"date": "2024-01-04", "count": 22, "avgRating": 4.5},
+                {"date": "2024-01-05", "count": 20, "avgRating": 4.2},
+                {"date": "2024-01-06", "count": 25, "avgRating": 4.4},
+                {"date": "2024-01-07", "count": 28, "avgRating": 4.6}
+            ],
+            "ratingDistribution": [
+                {"rating": 1, "count": 5},
+                {"rating": 2, "count": 10},
+                {"rating": 3, "count": 25},
+                {"rating": 4, "count": 55},
+                {"rating": 5, "count": 55}
+            ]
+        }
+        
+        telemetry.track_chat_request(user_id, "", success=True)
+        return jsonify(analytics_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin analytics: {str(e)}")
+        telemetry.track_error("admin_analytics_error", str(e), user_id)
+        return jsonify({"error": "Failed to fetch analytics data"}), 500
+
+
+@bp.route("/admin/feedback", methods=["GET"])
+@authenticated
+async def admin_feedback(auth_claims: dict[str, Any]):
+    """
+    Get feedback data for the admin dashboard
+    """
+    try:
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        
+        # Mock feedback data - in a real implementation, you'd query CosmosDB
+        feedback_data = [
+            {
+                "id": "1",
+                "timestamp": "2024-01-07T10:30:00Z",
+                "rating": 5,
+                "user": "user123",
+                "session": "session-456",
+                "comment": "Great response, very helpful!"
+            },
+            {
+                "id": "2", 
+                "timestamp": "2024-01-07T09:15:00Z",
+                "rating": 4,
+                "user": "user456",
+                "session": "session-789",
+                "comment": "Good but could be more detailed"
+            },
+            {
+                "id": "3",
+                "timestamp": "2024-01-07T08:45:00Z", 
+                "rating": 3,
+                "user": "user789",
+                "session": "session-123",
+                "comment": "Somewhat helpful but not exactly what I needed"
+            },
+            {
+                "id": "4",
+                "timestamp": "2024-01-06T16:20:00Z",
+                "rating": 5,
+                "user": "user234",
+                "session": "session-567",
+                "comment": "Perfect answer, exactly what I was looking for!"
+            },
+            {
+                "id": "5",
+                "timestamp": "2024-01-06T14:10:00Z",
+                "rating": 2,
+                "user": "user567",
+                "session": "session-890",
+                "comment": "Not very relevant to my question"
+            }
+        ]
+        
+        telemetry.track_chat_request(user_id, "", success=True)
+        return jsonify(feedback_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin feedback: {str(e)}")
+        telemetry.track_error("admin_feedback_error", str(e), user_id)
+        return jsonify({"error": "Failed to fetch feedback data"}), 500
+
+
+@bp.route("/admin/chat-history", methods=["GET"])
+@authenticated
+async def admin_chat_history(auth_claims: dict[str, Any]):
+    """
+    Get chat history data for the admin dashboard
+    """
+    try:
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        
+        # Mock chat history data - in a real implementation, you'd query CosmosDB
+        chat_history_data = [
+            {
+                "id": "session-456",
+                "user": "user123", 
+                "timestamp": "2024-01-07T10:30:00Z",
+                "messages": 8,
+                "duration": "15m 32s",
+                "lastMessage": "How do I implement authentication?"
+            },
+            {
+                "id": "session-789",
+                "user": "user456",
+                "timestamp": "2024-01-07T09:15:00Z", 
+                "messages": 5,
+                "duration": "8m 45s",
+                "lastMessage": "What are the deployment options?"
+            },
+            {
+                "id": "session-123",
+                "user": "user789",
+                "timestamp": "2024-01-07T08:45:00Z",
+                "messages": 12,
+                "duration": "22m 18s", 
+                "lastMessage": "Can you help with configuration settings?"
+            },
+            {
+                "id": "session-567",
+                "user": "user234",
+                "timestamp": "2024-01-06T16:20:00Z",
+                "messages": 6,
+                "duration": "11m 07s",
+                "lastMessage": "How to set up monitoring?"
+            },
+            {
+                "id": "session-890",
+                "user": "user567",
+                "timestamp": "2024-01-06T14:10:00Z",
+                "messages": 3,
+                "duration": "4m 23s",
+                "lastMessage": "What is the pricing model?"
+            }
+        ]
+        
+        telemetry.track_chat_request(user_id, "", success=True)
+        return jsonify(chat_history_data)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin chat history: {str(e)}")
+        telemetry.track_error("admin_chat_history_error", str(e), user_id)
+        return jsonify({"error": "Failed to fetch chat history"}), 500
+
+
+@bp.route("/admin/export", methods=["POST"])
+@authenticated
+async def admin_export(auth_claims: dict[str, Any]):
+    """
+    Export data for the admin dashboard
+    """
+    try:
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 415
+            
+        request_json = await request.get_json()
+        data_type = request_json.get("dataType")
+        format_type = request_json.get("format", "csv")
+        data = request_json.get("data", [])
+        
+        if not data_type or not data:
+            return jsonify({"error": "dataType and data are required"}), 400
+        
+        # Create CSV export
+        if format_type == "csv":
+            import csv
+            import io
+            
+            output = io.StringIO()
+            if data:
+                writer = csv.DictWriter(output, fieldnames=data[0].keys())
+                writer.writeheader()
+                writer.writerows(data)
+            
+            response_data = output.getvalue()
+            output.close()
+            
+            response = make_response(response_data)
+            response.headers["Content-Type"] = "text/csv"
+            response.headers["Content-Disposition"] = f"attachment; filename={data_type}_export.csv"
+            
+        elif format_type == "json":
+            response = make_response(json.dumps(data, indent=2))
+            response.headers["Content-Type"] = "application/json"
+            response.headers["Content-Disposition"] = f"attachment; filename={data_type}_export.json"
+        else:
+            return jsonify({"error": "Unsupported format"}), 400
+        
+        telemetry.track_chat_request(user_id, "", success=True)
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error exporting admin data: {str(e)}")
+        telemetry.track_error("admin_export_error", str(e), user_id)
+        return jsonify({"error": "Failed to export data"}), 500
