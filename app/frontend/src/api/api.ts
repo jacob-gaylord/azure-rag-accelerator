@@ -10,7 +10,10 @@ import {
     HistoryApiResponse,
     FeedbackRequest,
     FeedbackResponse,
-    FeedbackApiResponse
+    FeedbackApiResponse,
+    CitationStrategiesConfig,
+    CitationStrategyInfo,
+    CitationResult
 } from "./models";
 import { useLogin, getToken, isUsingAppServicesLogin } from "../authConfig";
 
@@ -89,8 +92,204 @@ export async function getSpeechApi(text: string): Promise<string | null> {
         .then(blob => (blob ? URL.createObjectURL(blob) : null));
 }
 
-export function getCitationFilePath(citation: string): string {
+export function getCitationFilePath(citation: string, citationBaseUrl?: string): string {
+    // If a custom base URL is provided, use it; otherwise use the current backend
+    if (citationBaseUrl && citationBaseUrl.trim() !== "") {
+        // Remove trailing slash from base URL and leading slash from citation if both exist
+        const baseUrl = citationBaseUrl.replace(/\/+$/, "");
+        const path = citation.startsWith("/") ? citation : `/${citation}`;
+        return `${baseUrl}${path}`;
+    }
+
+    // Default behavior - use the current backend's /content endpoint
     return `${BACKEND_URI}/content/${citation}`;
+}
+
+/**
+ * Generate a citation URL using advanced citation strategies
+ */
+export function generateCitationUrl(citation: string, config?: Config, metadata?: Record<string, any>): CitationResult {
+    // If no config or citation strategies available, fall back to legacy behavior
+    if (!config?.citationStrategies) {
+        const url = getCitationFilePath(citation, config?.citationBaseUrl);
+        return {
+            url,
+            strategyUsed: "legacy",
+            requiresAuth: false,
+            metadata: { source: "legacy_fallback" }
+        };
+    }
+
+    const strategies = config.citationStrategies;
+
+    try {
+        // Find the best strategy for this citation
+        const bestStrategy = findBestCitationStrategy(citation, strategies);
+
+        if (!bestStrategy) {
+            // Fall back to legacy or default strategy
+            const fallbackUrl = strategies.legacyBaseUrl
+                ? getCitationFilePath(citation, strategies.legacyBaseUrl)
+                : getCitationFilePath(citation, config.citationBaseUrl);
+
+            return {
+                url: fallbackUrl,
+                strategyUsed: "fallback",
+                requiresAuth: false,
+                metadata: { source: "fallback" }
+            };
+        }
+
+        // Generate URL using the selected strategy
+        const url = buildCitationUrl(citation, bestStrategy);
+
+        return {
+            url,
+            strategyUsed: bestStrategy.name,
+            requiresAuth: bestStrategy.authentication?.requiresAuth || false,
+            authHeaders: bestStrategy.authentication?.additionalHeaders,
+            metadata: {
+                strategyType: bestStrategy.type,
+                strategyPriority: bestStrategy.priority,
+                originalCitation: citation,
+                ...metadata
+            }
+        };
+    } catch (error) {
+        // Error handling - fall back to legacy behavior
+        const fallbackUrl = getCitationFilePath(citation, config?.citationBaseUrl);
+        return {
+            url: fallbackUrl,
+            strategyUsed: "error_fallback",
+            requiresAuth: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+            metadata: { source: "error_fallback" }
+        };
+    }
+}
+
+/**
+ * Find the best citation strategy for a given file path
+ */
+function findBestCitationStrategy(filePath: string, strategiesConfig: CitationStrategiesConfig): CitationStrategyInfo | null {
+    const availableStrategies = strategiesConfig.strategies.filter(s => s.enabled);
+
+    if (availableStrategies.length === 0) {
+        return null;
+    }
+
+    // Check if there's a specific default strategy
+    if (strategiesConfig.defaultStrategy) {
+        const defaultStrategy = availableStrategies.find(s => s.name === strategiesConfig.defaultStrategy);
+        if (defaultStrategy && canStrategyHandleFile(filePath, defaultStrategy)) {
+            return defaultStrategy;
+        }
+    }
+
+    // Find all strategies that can handle this file
+    const suitableStrategies = availableStrategies.filter(strategy => canStrategyHandleFile(filePath, strategy));
+
+    if (suitableStrategies.length === 0) {
+        // Try fallback strategy if specified
+        if (strategiesConfig.fallbackStrategy) {
+            const fallbackStrategy = availableStrategies.find(s => s.name === strategiesConfig.fallbackStrategy);
+            if (fallbackStrategy) {
+                return fallbackStrategy;
+            }
+        }
+        return null;
+    }
+
+    // Sort by priority (higher priority first) and return the best match
+    suitableStrategies.sort((a, b) => b.priority - a.priority);
+    return suitableStrategies[0];
+}
+
+/**
+ * Check if a strategy can handle a specific file
+ */
+function canStrategyHandleFile(filePath: string, strategy: CitationStrategyInfo): boolean {
+    // Check file extensions if specified
+    if (strategy.fileExtensions && strategy.fileExtensions.length > 0) {
+        const fileExt = filePath.split(".").pop()?.toLowerCase();
+        if (!fileExt || !strategy.fileExtensions.some(ext => ext.toLowerCase().replace(".", "") === fileExt)) {
+            return false;
+        }
+    }
+
+    // Check path patterns if specified
+    if (strategy.pathPatterns && strategy.pathPatterns.length > 0) {
+        const matchesPattern = strategy.pathPatterns.some(pattern => {
+            // Simple pattern matching (can be enhanced for more complex patterns)
+            if (pattern.includes("*")) {
+                const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$", "i");
+                return regex.test(filePath);
+            } else {
+                return filePath.toLowerCase().includes(pattern.toLowerCase());
+            }
+        });
+
+        if (!matchesPattern) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Build citation URL using a specific strategy
+ */
+function buildCitationUrl(filePath: string, strategy: CitationStrategyInfo): string {
+    let baseUrl = strategy.baseUrl.replace(/\/+$/, ""); // Remove trailing slashes
+    let path = filePath.startsWith("/") ? filePath.slice(1) : filePath; // Remove leading slash
+
+    // Handle special cases for different strategy types
+    switch (strategy.type) {
+        case "sharepoint":
+            // SharePoint URLs might need special handling
+            return `${baseUrl}/${path}`;
+
+        case "blob_storage":
+            // Azure Blob Storage URLs
+            return `${baseUrl}/${path}`;
+
+        case "file_server":
+            // Traditional file server URLs
+            return `${baseUrl}/${path}`;
+
+        case "cms":
+            // CMS systems might use document IDs instead of paths
+            const docId = path.split(".")[0]; // Remove extension for CMS
+            return `${baseUrl}/documents/${docId}`;
+
+        case "custom_url":
+            // Custom URL with potential template support
+            return `${baseUrl}/${path}`;
+
+        default:
+            // Default strategy
+            if (baseUrl) {
+                return `${baseUrl}/${path}`;
+            } else {
+                return `${BACKEND_URI}/content/${path}`;
+            }
+    }
+}
+
+/**
+ * Enhanced citation path function that supports advanced strategies
+ */
+export function getAdvancedCitationFilePath(citation: string, config?: Config, metadata?: Record<string, any>): string {
+    const result = generateCitationUrl(citation, config, metadata);
+    return result.url;
+}
+
+/**
+ * Get citation information including authentication requirements
+ */
+export function getCitationInfo(citation: string, config?: Config, metadata?: Record<string, any>): CitationResult {
+    return generateCitationUrl(citation, config, metadata);
 }
 
 export async function uploadFileApi(request: FormData, idToken: string): Promise<SimpleAPIResponse> {

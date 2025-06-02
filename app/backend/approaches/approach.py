@@ -36,6 +36,9 @@ from openai.types.chat import (
 from approaches.promptmanager import PromptManager
 from core.authentication import AuthenticationHelper
 
+# Import citation strategies
+from citation_strategies import CitationStrategyFactory, CitationResult, load_citation_strategies_config
+
 
 @dataclass
 class Document:
@@ -155,6 +158,7 @@ class Approach(ABC):
         vision_token_provider: Callable[[], Awaitable[str]],
         prompt_manager: PromptManager,
         reasoning_effort: Optional[str] = None,
+        citation_strategy_factory: Optional[CitationStrategyFactory] = None,
     ):
         self.search_client = search_client
         self.openai_client = openai_client
@@ -171,6 +175,18 @@ class Approach(ABC):
         self.prompt_manager = prompt_manager
         self.reasoning_effort = reasoning_effort
         self.include_token_usage = True
+        
+        # Initialize citation strategy factory
+        if citation_strategy_factory is None:
+            # Load from configuration or fall back to environment-based factory
+            try:
+                config = load_citation_strategies_config()
+                self.citation_strategy_factory = CitationStrategyFactory(config)
+            except Exception:
+                # Fallback to environment-based configuration for backward compatibility
+                self.citation_strategy_factory = CitationStrategyFactory.from_environment()
+        else:
+            self.citation_strategy_factory = citation_strategy_factory
 
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
@@ -329,27 +345,92 @@ class Approach(ABC):
 
         if use_semantic_captions:
             return [
-                (self.get_citation((doc.sourcepage or ""), use_image_citation))
+                (self.get_citation(
+                    (doc.sourcepage or ""), 
+                    use_image_citation,
+                    metadata={
+                        'document_id': doc.id,
+                        'category': doc.category,
+                        'sourcefile': doc.sourcefile,
+                        'score': doc.score,
+                        'reranker_score': doc.reranker_score
+                    }
+                ))
                 + ": "
                 + nonewlines(" . ".join([cast(str, c.text) for c in (doc.captions or [])]))
                 for doc in results
             ]
         else:
             return [
-                (self.get_citation((doc.sourcepage or ""), use_image_citation)) + ": " + nonewlines(doc.content or "")
+                (self.get_citation(
+                    (doc.sourcepage or ""), 
+                    use_image_citation,
+                    metadata={
+                        'document_id': doc.id,
+                        'category': doc.category,
+                        'sourcefile': doc.sourcefile,
+                        'score': doc.score,
+                        'reranker_score': doc.reranker_score
+                    }
+                )) + ": " + nonewlines(doc.content or "")
                 for doc in results
             ]
 
-    def get_citation(self, sourcepage: str, use_image_citation: bool) -> str:
+    def get_citation(self, sourcepage: str, use_image_citation: bool, metadata: Optional[dict[str, Any]] = None) -> str:
+        """
+        Generate a citation for a source page using the configured citation strategies.
+        
+        Args:
+            sourcepage: The source page/file path to generate a citation for
+            use_image_citation: Whether this is for an image citation
+            metadata: Optional metadata about the document
+            
+        Returns:
+            The generated citation URL/reference
+        """
         if use_image_citation:
+            # For image citations, return the source page as-is for now
+            # This could be enhanced to use citation strategies for images too
             return sourcepage
-        else:
-            path, ext = os.path.splitext(sourcepage)
-            if ext.lower() == ".png":
-                page_idx = path.rfind("-")
-                page_number = int(path[page_idx + 1 :])
-                return f"{path[:page_idx]}.pdf#page={page_number}"
-
+        
+        # Handle special case for PNG files (convert to PDF page references)
+        path, ext = os.path.splitext(sourcepage)
+        if ext.lower() == ".png":
+            page_idx = path.rfind("-")
+            if page_idx != -1:
+                try:
+                    page_number = int(path[page_idx + 1 :])
+                    pdf_path = f"{path[:page_idx]}.pdf"
+                    
+                    # Use citation strategies for the PDF path with page fragment
+                    citation_result = self.citation_strategy_factory.generate_citation_url(pdf_path, metadata)
+                    if citation_result.url and not citation_result.error:
+                        # Add the page fragment to the generated URL
+                        return f"{citation_result.url}#page={page_number}"
+                except (ValueError, IndexError):
+                    pass
+            
+            # Fallback to original logic if page extraction fails
+            return f"{path[:page_idx]}.pdf#page={page_number}" if page_idx != -1 else sourcepage
+        
+        # Use the citation strategy factory to generate the URL
+        try:
+            citation_result = self.citation_strategy_factory.generate_citation_url(sourcepage, metadata)
+            
+            if citation_result.error:
+                # Log the error but return the sourcepage as fallback
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Citation strategy failed for {sourcepage}: {citation_result.error}")
+                return sourcepage
+            
+            return citation_result.url or sourcepage
+            
+        except Exception as e:
+            # Log unexpected errors and fallback to sourcepage
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Unexpected error in citation generation for {sourcepage}: {e}")
             return sourcepage
 
     async def compute_text_embedding(self, q: str):

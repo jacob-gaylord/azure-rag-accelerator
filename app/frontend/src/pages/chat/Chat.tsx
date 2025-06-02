@@ -17,7 +17,9 @@ import {
     ResponseMessage,
     VectorFields,
     GPT4VInput,
-    SpeechConfig
+    SpeechConfig,
+    Config,
+    CitationResult
 } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
@@ -64,6 +66,8 @@ const Chat = () => {
     const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
 
+    const [config, setConfig] = useState<Config | undefined>(undefined);
+
     const lastQuestionRef = useRef<string>("");
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
 
@@ -107,6 +111,7 @@ const Chat = () => {
 
     const getConfig = async () => {
         configApi().then(config => {
+            setConfig(config);
             setShowGPT4VOptions(config.showGPT4VOptions);
             if (config.showGPT4VOptions) {
                 setUseGPT4V(true);
@@ -372,7 +377,7 @@ const Chat = () => {
         makeApiRequest(example);
     };
 
-    const onShowCitation = (citation: string, index: number) => {
+    const onShowCitation = (citation: string, index: number, citationInfo?: CitationResult) => {
         if (activeCitation === citation && activeAnalysisPanelTab === AnalysisPanelTabs.CitationTab && selectedAnswer === index) {
             setActiveAnalysisPanelTab(undefined);
         } else {
@@ -381,6 +386,18 @@ const Chat = () => {
         }
 
         setSelectedAnswer(index);
+
+        // Log citation info for debugging if available
+        if (citationInfo) {
+            console.log("Citation clicked in chat:", {
+                originalCitation: citation,
+                url: citationInfo.url,
+                strategy: citationInfo.strategyUsed,
+                requiresAuth: citationInfo.requiresAuth,
+                error: citationInfo.error,
+                answerIndex: index
+            });
+        }
     };
 
     const onToggleTab = (tab: AnalysisPanelTabs, index: number) => {
@@ -439,13 +456,14 @@ const Chat = () => {
                                                 index={index}
                                                 speechConfig={speechConfig}
                                                 isSelected={false}
-                                                onCitationClicked={c => onShowCitation(c, index)}
+                                                onCitationClicked={(c, citationInfo) => onShowCitation(c, index, citationInfo)}
                                                 onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
                                                 showSpeechOutputAzure={showSpeechOutputAzure}
                                                 showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                config={config}
                                             />
                                         </div>
                                     </div>
@@ -462,13 +480,14 @@ const Chat = () => {
                                                 index={index}
                                                 speechConfig={speechConfig}
                                                 isSelected={selectedAnswer === index && activeAnalysisPanelTab !== undefined}
-                                                onCitationClicked={c => onShowCitation(c, index)}
+                                                onCitationClicked={(c, citationInfo) => onShowCitation(c, index, citationInfo)}
                                                 onThoughtProcessClicked={() => onToggleTab(AnalysisPanelTabs.ThoughtProcessTab, index)}
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
                                                 showSpeechOutputAzure={showSpeechOutputAzure}
                                                 showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                config={config}
                                             />
                                         </div>
                                     </div>

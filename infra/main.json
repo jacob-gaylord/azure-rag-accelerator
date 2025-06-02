@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "9140540924006288992"
+      "templateHash": "4320358281378952741"
     }
   },
   "parameters": {
@@ -137,6 +137,143 @@
     "appServiceSkuName": {
       "type": "string"
     },
+    "appServicePlanTier": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Free",
+        "Shared",
+        "Basic",
+        "Standard",
+        "Premium",
+        "PremiumV2",
+        "PremiumV3",
+        "Isolated",
+        "IsolatedV2"
+      ],
+      "metadata": {
+        "description": "App Service Plan tier (e.g., Basic, Standard, Premium, PremiumV2, PremiumV3)"
+      }
+    },
+    "appServicePlanSize": {
+      "type": "string",
+      "defaultValue": "B1",
+      "metadata": {
+        "description": "App Service Plan size (e.g., B1, S1, P1V2)"
+      }
+    },
+    "appServicePlanCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "App Service Plan capacity (number of instances)"
+      }
+    },
+    "appServiceEnableAutoscale": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable auto-scaling for App Service Plan"
+      }
+    },
+    "appServiceAutoscaleMinInstances": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum number of instances for auto-scaling"
+      }
+    },
+    "appServiceAutoscaleMaxInstances": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "Maximum number of instances for auto-scaling"
+      }
+    },
+    "appServiceScaleOutCpuThreshold": {
+      "type": "int",
+      "defaultValue": 70,
+      "metadata": {
+        "description": "CPU percentage threshold to scale out"
+      }
+    },
+    "appServiceScaleInCpuThreshold": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "CPU percentage threshold to scale in"
+      }
+    },
+    "appServiceScaleOutMemoryThreshold": {
+      "type": "int",
+      "defaultValue": 80,
+      "metadata": {
+        "description": "Memory percentage threshold to scale out"
+      }
+    },
+    "appServiceScaleInMemoryThreshold": {
+      "type": "int",
+      "defaultValue": 40,
+      "metadata": {
+        "description": "Memory percentage threshold to scale in"
+      }
+    },
+    "appServiceHealthCheckPath": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Health check path for App Service"
+      }
+    },
+    "appServiceAlwaysOn": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable always-on for App Service (overrides SKU-based default)"
+      }
+    },
+    "appServiceUse32BitWorkerProcess": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Use 32-bit worker process (overrides SKU-based default)"
+      }
+    },
+    "appServiceNumberOfWorkers": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of worker processes"
+      }
+    },
+    "appServiceMinimumElasticInstanceCount": {
+      "type": "int",
+      "defaultValue": 0,
+      "metadata": {
+        "description": "Minimum elastic instance count for consumption plans"
+      }
+    },
+    "appServiceEnableDeploymentSlots": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable deployment slots for App Service"
+      }
+    },
+    "appServiceDeploymentSlotsCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Number of deployment slots to create"
+      }
+    },
+    "appServiceDeploymentSlotNames": {
+      "type": "string",
+      "defaultValue": "staging",
+      "metadata": {
+        "description": "Names of deployment slots (comma-separated)"
+      }
+    },
     "openAiHost": {
       "type": "string",
       "allowedValues": [
@@ -246,6 +383,379 @@
     "chatHistoryVersion": {
       "type": "string",
       "defaultValue": "cosmosdb-v2"
+    },
+    "cosmosDbConsistencyLevel": {
+      "type": "string",
+      "defaultValue": "Session",
+      "allowedValues": [
+        "Strong",
+        "BoundedStaleness",
+        "Session",
+        "Eventual",
+        "ConsistentPrefix"
+      ],
+      "metadata": {
+        "description": "Consistency level for Cosmos DB"
+      }
+    },
+    "cosmosDbMaxStalenessPrefix": {
+      "type": "int",
+      "defaultValue": 100000,
+      "metadata": {
+        "description": "Max staleness prefix for BoundedStaleness consistency"
+      }
+    },
+    "cosmosDbMaxIntervalInSeconds": {
+      "type": "int",
+      "defaultValue": 5,
+      "metadata": {
+        "description": "Max interval in seconds for BoundedStaleness consistency"
+      }
+    },
+    "cosmosDbBackupPolicyType": {
+      "type": "string",
+      "defaultValue": "Periodic",
+      "allowedValues": [
+        "Periodic",
+        "Continuous"
+      ],
+      "metadata": {
+        "description": "Backup policy type for Cosmos DB"
+      }
+    },
+    "cosmosDbBackupIntervalInMinutes": {
+      "type": "int",
+      "defaultValue": 240,
+      "metadata": {
+        "description": "Backup interval in minutes for periodic backup (60-1440)"
+      }
+    },
+    "cosmosDbBackupRetentionInHours": {
+      "type": "int",
+      "defaultValue": 8,
+      "metadata": {
+        "description": "Backup retention in hours for periodic backup (8-720)"
+      }
+    },
+    "cosmosDbGeoRedundantBackup": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable geo-redundant backup for periodic backup"
+      }
+    },
+    "cosmosDbEnableMultipleWriteLocations": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable multiple write locations for Cosmos DB"
+      }
+    },
+    "cosmosDbAdditionalRegions": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Additional regions for Cosmos DB deployment (JSON array of objects with locationName and failoverPriority)"
+      }
+    },
+    "cosmosDbEnableAutoscale": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable autoscale for Cosmos DB throughput"
+      }
+    },
+    "cosmosDbAutoscaleMaxThroughput": {
+      "type": "int",
+      "defaultValue": 4000,
+      "metadata": {
+        "description": "Maximum throughput for autoscale (4000-1000000, must be divisible by 1000)"
+      }
+    },
+    "cosmosDbEnableAnalyticalStorage": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable analytical storage for Cosmos DB"
+      }
+    },
+    "cosmosDbAnalyticalStoreTtl": {
+      "type": "int",
+      "defaultValue": -1,
+      "metadata": {
+        "description": "Time to live for analytical store in seconds (-1 for infinite)"
+      }
+    },
+    "cosmosDbEnableZoneRedundancy": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable zone redundancy for Cosmos DB primary region"
+      }
+    },
+    "cosmosDbNetworkAclBypass": {
+      "type": "string",
+      "defaultValue": "AzureServices",
+      "allowedValues": [
+        "None",
+        "AzureServices"
+      ],
+      "metadata": {
+        "description": "Network ACL bypass for Cosmos DB"
+      }
+    },
+    "vnetEnableCustomConfiguration": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable custom VNet configuration (overrides default settings)"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Custom VNet address prefix (CIDR notation)"
+      }
+    },
+    "appSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.3.0/24",
+      "metadata": {
+        "description": "App Service integration subnet address prefix"
+      }
+    },
+    "backendSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Backend services subnet address prefix"
+      }
+    },
+    "privateEndpointSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.2.0/24",
+      "metadata": {
+        "description": "Private endpoints subnet address prefix"
+      }
+    },
+    "vmSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.4.0/24",
+      "metadata": {
+        "description": "Virtual machine subnet address prefix"
+      }
+    },
+    "bastionSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.5.0/24",
+      "metadata": {
+        "description": "Azure Bastion subnet address prefix"
+      }
+    },
+    "enableGranularPrivateEndpoints": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable granular private endpoint controls (overrides usePrivateEndpoint for individual services)"
+      }
+    },
+    "enableCosmosDbPrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Cosmos DB"
+      }
+    },
+    "enableStoragePrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Storage Account"
+      }
+    },
+    "enableAppServicePrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for App Service"
+      }
+    },
+    "enableSearchPrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Azure Search"
+      }
+    },
+    "enableOpenAiPrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for OpenAI service"
+      }
+    },
+    "enableComputerVisionPrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Computer Vision service"
+      }
+    },
+    "enableDocumentIntelligencePrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Document Intelligence service"
+      }
+    },
+    "enableSpeechPrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable private endpoint for Speech service"
+      }
+    },
+    "enableCustomNsgRules": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable custom Network Security Group rules"
+      }
+    },
+    "allowedInboundPorts": {
+      "type": "array",
+      "defaultValue": [
+        "80",
+        "443"
+      ],
+      "metadata": {
+        "description": "Allowed inbound ports for NSG rules (array of port strings)"
+      }
+    },
+    "allowedOutboundPorts": {
+      "type": "array",
+      "defaultValue": [
+        "80",
+        "443",
+        "53"
+      ],
+      "metadata": {
+        "description": "Allowed outbound ports for NSG rules (array of port strings)"
+      }
+    },
+    "allowedSourceAddressPrefixes": {
+      "type": "array",
+      "defaultValue": [
+        "*"
+      ],
+      "metadata": {
+        "description": "Allowed source address prefixes for inbound NSG rules"
+      }
+    },
+    "allowedDestinationAddressPrefixes": {
+      "type": "array",
+      "defaultValue": [
+        "*"
+      ],
+      "metadata": {
+        "description": "Allowed destination address prefixes for outbound NSG rules"
+      }
+    },
+    "nsgRulePriorityStart": {
+      "type": "int",
+      "defaultValue": 1000,
+      "metadata": {
+        "description": "NSG rule priority starting number (rules will increment from this value)"
+      }
+    },
+    "enableServiceEndpoints": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable service endpoints for subnets"
+      }
+    },
+    "serviceEndpoints": {
+      "type": "array",
+      "defaultValue": [
+        "Microsoft.Storage",
+        "Microsoft.KeyVault",
+        "Microsoft.AzureCosmosDB"
+      ],
+      "metadata": {
+        "description": "Service endpoints to enable (e.g., Microsoft.Storage, Microsoft.KeyVault)"
+      }
+    },
+    "enableVnetPeering": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable VNet peering configuration"
+      }
+    },
+    "remoteVnetResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Remote VNet resource ID for peering"
+      }
+    },
+    "allowForwardedTraffic": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Allow forwarded traffic in VNet peering"
+      }
+    },
+    "allowGatewayTransit": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Allow gateway transit in VNet peering"
+      }
+    },
+    "useRemoteGateways": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Use remote gateways in VNet peering"
+      }
+    },
+    "enableDdosProtection": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable DDoS protection standard"
+      }
+    },
+    "ddosProtectionPlanId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "DDoS protection plan resource ID"
+      }
+    },
+    "customDnsServers": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Custom DNS servers for VNet (array of IP addresses)"
+      }
+    },
+    "enablePrivateDnsAutoRegistration": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable private DNS zone auto-registration"
+      }
+    },
+    "customPrivateDnsZones": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Custom private DNS zone names (array of DNS zone names)"
+      }
     },
     "openAiLocation": {
       "type": "string",
@@ -5466,8 +5976,10 @@
           },
           "sku": {
             "value": {
-              "name": "[parameters('appServiceSkuName')]",
-              "capacity": 1
+              "name": "[if(not(empty(parameters('appServiceSkuName'))), parameters('appServiceSkuName'), format('{0}_{1}', parameters('appServicePlanTier'), parameters('appServicePlanSize')))]",
+              "tier": "[parameters('appServicePlanTier')]",
+              "size": "[parameters('appServicePlanSize')]",
+              "capacity": "[parameters('appServicePlanCapacity')]"
             }
           },
           "kind": {
@@ -5600,10 +6112,19 @@
             "value": "[variables('authenticationIssuerUri')]"
           },
           "use32BitWorkerProcess": {
-            "value": "[equals(parameters('appServiceSkuName'), 'F1')]"
+            "value": "[parameters('appServiceUse32BitWorkerProcess')]"
           },
           "alwaysOn": {
-            "value": "[not(equals(parameters('appServiceSkuName'), 'F1'))]"
+            "value": "[parameters('appServiceAlwaysOn')]"
+          },
+          "numberOfWorkers": {
+            "value": "[parameters('appServiceNumberOfWorkers')]"
+          },
+          "minimumElasticInstanceCount": {
+            "value": "[parameters('appServiceMinimumElasticInstanceCount')]"
+          },
+          "healthCheckPath": {
+            "value": "[parameters('appServiceHealthCheckPath')]"
           },
           "appSettings": {
             "value": "[union(createObject('AZURE_STORAGE_ACCOUNT', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('storageResourceGroupName'))), parameters('storageResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'storage'), '2022-09-01').outputs.name.value, 'AZURE_STORAGE_CONTAINER', parameters('storageContainerName'), 'AZURE_SEARCH_INDEX', parameters('searchIndexName'), 'AZURE_SEARCH_AGENT', parameters('searchAgentName'), 'AZURE_SEARCH_SERVICE', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('searchServiceResourceGroupName'))), parameters('searchServiceResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'search-service'), '2022-09-01').outputs.name.value, 'AZURE_SEARCH_SEMANTIC_RANKER', variables('actualSearchServiceSemanticRankerLevel'), 'AZURE_SEARCH_QUERY_REWRITING', parameters('searchServiceQueryRewriting'), 'AZURE_VISION_ENDPOINT', if(parameters('useGPT4V'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('computerVisionResourceGroupName'))), parameters('computerVisionResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'computerVision'), '2022-09-01').outputs.endpoint.value, ''), 'AZURE_SEARCH_QUERY_LANGUAGE', parameters('searchQueryLanguage'), 'AZURE_SEARCH_QUERY_SPELLER', parameters('searchQuerySpeller'), 'AZURE_SEARCH_FIELD_NAME_EMBEDDING', parameters('searchFieldNameEmbedding'), 'APPLICATIONINSIGHTS_CONNECTION_STRING', if(parameters('useApplicationInsights'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'monitoring'), '2022-09-01').outputs.applicationInsightsConnectionString.value, ''), 'AZURE_SPEECH_SERVICE_ID', if(parameters('useSpeechOutputAzure'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('speechServiceResourceGroupName'))), parameters('speechServiceResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'speech-service'), '2022-09-01').outputs.resourceId.value, ''), 'AZURE_SPEECH_SERVICE_LOCATION', if(parameters('useSpeechOutputAzure'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('speechServiceResourceGroupName'))), parameters('speechServiceResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'speech-service'), '2022-09-01').outputs.location.value, ''), 'AZURE_SPEECH_SERVICE_VOICE', if(parameters('useSpeechOutputAzure'), parameters('speechServiceVoice'), ''), 'ENABLE_LANGUAGE_PICKER', parameters('enableLanguagePicker'), 'USE_SPEECH_INPUT_BROWSER', parameters('useSpeechInputBrowser'), 'USE_SPEECH_OUTPUT_BROWSER', parameters('useSpeechOutputBrowser'), 'USE_SPEECH_OUTPUT_AZURE', parameters('useSpeechOutputAzure'), 'USE_AGENTIC_RETRIEVAL', parameters('useAgenticRetrieval'), 'USE_CHAT_HISTORY_BROWSER', parameters('useChatHistoryBrowser'), 'USE_CHAT_HISTORY_COSMOS', parameters('useChatHistoryCosmos'), 'AZURE_COSMOSDB_ACCOUNT', if(and(parameters('useAuthentication'), parameters('useChatHistoryCosmos')), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('cosmodDbResourceGroupName'))), parameters('cosmodDbResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'cosmosdb'), '2022-09-01').outputs.name.value, ''), 'AZURE_CHAT_HISTORY_DATABASE', parameters('chatHistoryDatabaseName'), 'AZURE_CHAT_HISTORY_CONTAINER', parameters('chatHistoryContainerName'), 'AZURE_USER_FEEDBACK_CONTAINER', parameters('userFeedbackContainerName'), 'AZURE_CHAT_HISTORY_VERSION', parameters('chatHistoryVersion'), 'OPENAI_HOST', parameters('openAiHost'), 'AZURE_OPENAI_EMB_MODEL_NAME', variables('embedding').modelName, 'AZURE_OPENAI_EMB_DIMENSIONS', variables('embedding').dimensions, 'AZURE_OPENAI_CHATGPT_MODEL', variables('chatGpt').modelName, 'AZURE_OPENAI_GPT4V_MODEL', variables('gpt4v').modelName, 'AZURE_OPENAI_REASONING_EFFORT', parameters('defaultReasoningEffort'), 'AZURE_OPENAI_SERVICE', if(and(parameters('isAzureOpenAiHost'), parameters('deployAzureOpenAi')), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('openAiResourceGroupName'))), parameters('openAiResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'openai'), '2022-09-01').outputs.name.value, ''), 'AZURE_OPENAI_CHATGPT_DEPLOYMENT', variables('chatGpt').deploymentName, 'AZURE_OPENAI_EMB_DEPLOYMENT', variables('embedding').deploymentName, 'AZURE_OPENAI_GPT4V_DEPLOYMENT', if(parameters('useGPT4V'), variables('gpt4v').deploymentName, ''), 'AZURE_OPENAI_SEARCHAGENT_MODEL', variables('searchAgent').modelName, 'AZURE_OPENAI_SEARCHAGENT_DEPLOYMENT', variables('searchAgent').deploymentName, 'AZURE_OPENAI_API_VERSION', parameters('azureOpenAiApiVersion'), 'AZURE_OPENAI_API_KEY_OVERRIDE', parameters('azureOpenAiApiKey'), 'AZURE_OPENAI_CUSTOM_URL', parameters('azureOpenAiCustomUrl'), 'OPENAI_API_KEY', parameters('openAiApiKey'), 'OPENAI_ORGANIZATION', parameters('openAiApiOrganization'), 'AZURE_USE_AUTHENTICATION', parameters('useAuthentication'), 'AZURE_ENFORCE_ACCESS_CONTROL', parameters('enforceAccessControl'), 'AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS', parameters('enableGlobalDocuments'), 'AZURE_ENABLE_UNAUTHENTICATED_ACCESS', parameters('enableUnauthenticatedAccess'), 'AZURE_SERVER_APP_ID', parameters('serverAppId'), 'AZURE_CLIENT_APP_ID', parameters('clientAppId'), 'AZURE_TENANT_ID', parameters('tenantId'), 'AZURE_AUTH_TENANT_ID', variables('tenantIdForAuth'), 'AZURE_AUTHENTICATION_ISSUER_URI', variables('authenticationIssuerUri'), 'ALLOWED_ORIGIN', join(variables('allowedOrigins'), ';'), 'USE_VECTORS', parameters('useVectors'), 'USE_GPT4V', parameters('useGPT4V'), 'USE_USER_UPLOAD', parameters('useUserUpload'), 'AZURE_USERSTORAGE_ACCOUNT', if(parameters('useUserUpload'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('storageResourceGroupName'))), parameters('storageResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'user-storage'), '2022-09-01').outputs.name.value, ''), 'AZURE_USERSTORAGE_CONTAINER', if(parameters('useUserUpload'), parameters('userStorageContainerName'), ''), 'AZURE_DOCUMENTINTELLIGENCE_SERVICE', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('documentIntelligenceResourceGroupName'))), parameters('documentIntelligenceResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'documentintelligence'), '2022-09-01').outputs.name.value, 'USE_LOCAL_PDF_PARSER', parameters('useLocalPdfParser'), 'USE_LOCAL_HTML_PARSER', parameters('useLocalHtmlParser'), 'USE_MEDIA_DESCRIBER_AZURE_CU', parameters('useMediaDescriberAzureCU'), 'AZURE_CONTENTUNDERSTANDING_ENDPOINT', if(parameters('useMediaDescriberAzureCU'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('contentUnderstandingResourceGroupName'))), parameters('contentUnderstandingResourceGroupName'), if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName'))))), 'Microsoft.Resources/deployments', 'content-understanding'), '2022-09-01').outputs.endpoint.value, ''), 'RUNNING_IN_PRODUCTION', 'true'), createObject('AZURE_SERVER_APP_SECRET', parameters('serverAppSecret'), 'AZURE_CLIENT_APP_SECRET', parameters('clientAppSecret')))]"
@@ -21057,31 +21578,45 @@
           "name": "[if(not(empty(parameters('cosmosDbAccountName'))), createObject('value', parameters('cosmosDbAccountName')), createObject('value', format('{0}{1}', variables('abbrs').documentDBDatabaseAccounts, variables('resourceToken'))))]",
           "location": "[if(not(empty(parameters('cosmosDbLocation'))), createObject('value', parameters('cosmosDbLocation')), createObject('value', parameters('location')))]",
           "locations": {
-            "value": [
-              {
-                "locationName": "[if(not(empty(parameters('cosmosDbLocation'))), parameters('cosmosDbLocation'), parameters('location'))]",
-                "failoverPriority": 0,
-                "isZoneRedundant": false
-              }
-            ]
+            "value": "[concat(createArray(createObject('locationName', if(not(empty(parameters('cosmosDbLocation'))), parameters('cosmosDbLocation'), parameters('location')), 'failoverPriority', 0, 'isZoneRedundant', parameters('cosmosDbEnableZoneRedundancy'))), parameters('cosmosDbAdditionalRegions'))]"
           },
+          "defaultConsistencyLevel": {
+            "value": "[parameters('cosmosDbConsistencyLevel')]"
+          },
+          "maxStalenessPrefix": "[if(equals(parameters('cosmosDbConsistencyLevel'), 'BoundedStaleness'), createObject('value', parameters('cosmosDbMaxStalenessPrefix')), createObject('value', null()))]",
+          "maxIntervalInSeconds": "[if(equals(parameters('cosmosDbConsistencyLevel'), 'BoundedStaleness'), createObject('value', parameters('cosmosDbMaxIntervalInSeconds')), createObject('value', null()))]",
+          "backupPolicyType": {
+            "value": "[parameters('cosmosDbBackupPolicyType')]"
+          },
+          "backupIntervalInMinutes": "[if(equals(parameters('cosmosDbBackupPolicyType'), 'Periodic'), createObject('value', parameters('cosmosDbBackupIntervalInMinutes')), createObject('value', null()))]",
+          "backupRetentionIntervalInHours": "[if(equals(parameters('cosmosDbBackupPolicyType'), 'Periodic'), createObject('value', parameters('cosmosDbBackupRetentionInHours')), createObject('value', null()))]",
+          "backupStorageRedundancy": "[if(and(equals(parameters('cosmosDbBackupPolicyType'), 'Periodic'), parameters('cosmosDbGeoRedundantBackup')), createObject('value', 'Geo'), createObject('value', 'Local'))]",
           "enableFreeTier": {
             "value": "[equals(parameters('cosmosDbSkuName'), 'free')]"
           },
-          "capabilitiesToAdd": "[if(equals(parameters('cosmosDbSkuName'), 'serverless'), createObject('value', createArray('EnableServerless')), createObject('value', createArray()))]",
+          "capabilitiesToAdd": {
+            "value": "[concat(if(equals(parameters('cosmosDbSkuName'), 'serverless'), createArray('EnableServerless'), createArray()), if(parameters('cosmosDbEnableAnalyticalStorage'), createArray('EnableAnalyticalStorage'), createArray()))]"
+          },
           "networkRestrictions": {
             "value": {
               "ipRules": [],
-              "networkAclBypass": "[parameters('bypass')]",
+              "networkAclBypass": "[parameters('cosmosDbNetworkAclBypass')]",
               "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
               "virtualNetworkRules": []
             }
+          },
+          "enableMultipleWriteLocations": {
+            "value": "[parameters('cosmosDbEnableMultipleWriteLocations')]"
+          },
+          "enableAnalyticalStorage": {
+            "value": "[parameters('cosmosDbEnableAnalyticalStorage')]"
           },
           "sqlDatabases": {
             "value": [
               {
                 "name": "[parameters('chatHistoryDatabaseName')]",
-                "throughput": "[if(equals(parameters('cosmosDbSkuName'), 'serverless'), null(), parameters('cosmosDbThroughput'))]",
+                "throughput": "[if(equals(parameters('cosmosDbSkuName'), 'serverless'), null(), if(parameters('cosmosDbEnableAutoscale'), null(), parameters('cosmosDbThroughput')))]",
+                "autoscaleSettingsMaxThroughput": "[if(equals(parameters('cosmosDbSkuName'), 'serverless'), null(), if(parameters('cosmosDbEnableAutoscale'), parameters('cosmosDbAutoscaleMaxThroughput'), null()))]",
                 "containers": [
                   {
                     "name": "[parameters('chatHistoryContainerName')]",
@@ -21090,6 +21625,7 @@
                       "/entra_oid",
                       "/session_id"
                     ],
+                    "analyticalStorageTtl": "[if(parameters('cosmosDbEnableAnalyticalStorage'), parameters('cosmosDbAnalyticalStoreTtl'), null())]",
                     "indexingPolicy": {
                       "indexingMode": "consistent",
                       "automatic": true,
@@ -21099,6 +21635,9 @@
                         },
                         {
                           "path": "/session_id/?"
+                        },
+                        {
+                          "path": "/messageId/?"
                         },
                         {
                           "path": "/timestamp/?"
@@ -21121,6 +21660,7 @@
                       "/userId",
                       "/sessionId"
                     ],
+                    "analyticalStorageTtl": "[if(parameters('cosmosDbEnableAnalyticalStorage'), parameters('cosmosDbAnalyticalStoreTtl'), null())]",
                     "indexingPolicy": {
                       "indexingMode": "consistent",
                       "automatic": true,
@@ -26700,6 +27240,48 @@
           "appServicePlanName": "[if(equals(parameters('deploymentTarget'), 'appservice'), createObject('value', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, if(not(empty(parameters('resourceGroupName'))), parameters('resourceGroupName'), format('{0}{1}', variables('abbrs').resourcesResourceGroups, parameters('environmentName')))), 'Microsoft.Resources/deployments', 'appserviceplan'), '2022-09-01').outputs.name.value), createObject('value', ''))]",
           "usePrivateEndpoint": {
             "value": "[parameters('usePrivateEndpoint')]"
+          },
+          "vnetEnableCustomConfiguration": {
+            "value": "[parameters('vnetEnableCustomConfiguration')]"
+          },
+          "vnetAddressPrefix": {
+            "value": "[parameters('vnetAddressPrefix')]"
+          },
+          "appSubnetAddressPrefix": {
+            "value": "[parameters('appSubnetAddressPrefix')]"
+          },
+          "backendSubnetAddressPrefix": {
+            "value": "[parameters('backendSubnetAddressPrefix')]"
+          },
+          "privateEndpointSubnetAddressPrefix": {
+            "value": "[parameters('privateEndpointSubnetAddressPrefix')]"
+          },
+          "vmSubnetAddressPrefix": {
+            "value": "[parameters('vmSubnetAddressPrefix')]"
+          },
+          "enableServiceEndpoints": {
+            "value": "[parameters('enableServiceEndpoints')]"
+          },
+          "serviceEndpoints": {
+            "value": "[parameters('serviceEndpoints')]"
+          },
+          "enableCustomNsgRules": {
+            "value": "[parameters('enableCustomNsgRules')]"
+          },
+          "allowedInboundPorts": {
+            "value": "[parameters('allowedInboundPorts')]"
+          },
+          "allowedOutboundPorts": {
+            "value": "[parameters('allowedOutboundPorts')]"
+          },
+          "allowedSourceAddressPrefixes": {
+            "value": "[parameters('allowedSourceAddressPrefixes')]"
+          },
+          "allowedDestinationAddressPrefixes": {
+            "value": "[parameters('allowedDestinationAddressPrefixes')]"
+          },
+          "nsgRulePriorityStart": {
+            "value": "[parameters('nsgRulePriorityStart')]"
           }
         },
         "template": {
@@ -26709,7 +27291,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "7661621426966592883"
+              "templateHash": "14064983612245014988"
             },
             "description": "Sets up private networking for all resources, using VNet, private endpoints, and DNS zones."
           },
@@ -26750,11 +27332,327 @@
                 "appservice",
                 "containerapps"
               ]
+            },
+            "vnetEnableCustomConfiguration": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable custom VNet configuration (overrides default settings)"
+              }
+            },
+            "vnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.0.0/16",
+              "metadata": {
+                "description": "Custom VNet address prefix (CIDR notation)"
+              }
+            },
+            "appSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.3.0/24",
+              "metadata": {
+                "description": "App Service integration subnet address prefix"
+              }
+            },
+            "backendSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.1.0/24",
+              "metadata": {
+                "description": "Backend services subnet address prefix"
+              }
+            },
+            "privateEndpointSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.2.0/24",
+              "metadata": {
+                "description": "Private endpoints subnet address prefix (used for AzureBastionSubnet in current implementation)"
+              }
+            },
+            "vmSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.4.0/24",
+              "metadata": {
+                "description": "Virtual machine subnet address prefix"
+              }
+            },
+            "enableServiceEndpoints": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable service endpoints for subnets"
+              }
+            },
+            "serviceEndpoints": {
+              "type": "array",
+              "defaultValue": [
+                "Microsoft.Storage",
+                "Microsoft.KeyVault",
+                "Microsoft.AzureCosmosDB"
+              ],
+              "metadata": {
+                "description": "Service endpoints to enable (e.g., Microsoft.Storage, Microsoft.KeyVault)"
+              }
+            },
+            "enableCustomNsgRules": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable custom Network Security Group rules"
+              }
+            },
+            "allowedInboundPorts": {
+              "type": "array",
+              "defaultValue": [
+                "80",
+                "443"
+              ],
+              "metadata": {
+                "description": "Allowed inbound ports for NSG rules (array of port strings)"
+              }
+            },
+            "allowedOutboundPorts": {
+              "type": "array",
+              "defaultValue": [
+                "80",
+                "443",
+                "53"
+              ],
+              "metadata": {
+                "description": "Allowed outbound ports for NSG rules (array of port strings)"
+              }
+            },
+            "allowedSourceAddressPrefixes": {
+              "type": "array",
+              "defaultValue": [
+                "*"
+              ],
+              "metadata": {
+                "description": "Allowed source address prefixes for inbound NSG rules"
+              }
+            },
+            "allowedDestinationAddressPrefixes": {
+              "type": "array",
+              "defaultValue": [
+                "*"
+              ],
+              "metadata": {
+                "description": "Allowed destination address prefixes for outbound NSG rules"
+              }
+            },
+            "nsgRulePriorityStart": {
+              "type": "int",
+              "defaultValue": 1000,
+              "metadata": {
+                "description": "NSG rule priority starting number (rules will increment from this value)"
+              }
             }
+          },
+          "variables": {
+            "serviceEndpointsEnabled": "[parameters('enableServiceEndpoints')]"
           },
           "resources": [
             {
-              "condition": "[parameters('usePrivateEndpoint')]",
+              "condition": "[and(parameters('enableCustomNsgRules'), parameters('usePrivateEndpoint'))]",
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowHttps",
+                    "properties": {
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "443",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 1000,
+                      "direction": "Inbound"
+                    }
+                  },
+                  {
+                    "name": "AllowHttp",
+                    "properties": {
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "80",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 1001,
+                      "direction": "Inbound"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[and(parameters('usePrivateEndpoint'), parameters('vnetEnableCustomConfiguration'))]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "vnet-custom",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "name": {
+                    "value": "[parameters('vnetName')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  },
+                  "addressPrefix": {
+                    "value": "[parameters('vnetAddressPrefix')]"
+                  },
+                  "subnets": {
+                    "value": [
+                      {
+                        "name": "backend-subnet",
+                        "properties": {
+                          "addressPrefix": "[parameters('backendSubnetAddressPrefix')]",
+                          "privateEndpointNetworkPolicies": "Enabled",
+                          "privateLinkServiceNetworkPolicies": "Enabled",
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                        }
+                      },
+                      {
+                        "name": "AzureBastionSubnet",
+                        "properties": {
+                          "addressPrefix": "[parameters('privateEndpointSubnetAddressPrefix')]",
+                          "privateEndpointNetworkPolicies": "Enabled",
+                          "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                      },
+                      {
+                        "name": "app-int-subnet",
+                        "properties": {
+                          "addressPrefix": "[parameters('appSubnetAddressPrefix')]",
+                          "privateEndpointNetworkPolicies": "Enabled",
+                          "privateLinkServiceNetworkPolicies": "Enabled",
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]",
+                          "delegations": "[if(equals(parameters('deploymentTarget'), 'appservice'), createArray(createObject('id', resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName')), 'name', parameters('appServicePlanName'), 'properties', createObject('serviceName', 'Microsoft.Web/serverFarms'))), createArray())]"
+                        }
+                      },
+                      {
+                        "name": "vm-subnet",
+                        "properties": {
+                          "addressPrefix": "[parameters('vmSubnetAddressPrefix')]",
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.1.42791",
+                      "templateHash": "8650127669149319691"
+                    },
+                    "description": "Creates a virtual network with customizable address prefixes and subnets."
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The location for the VNet"
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the VNet"
+                      }
+                    },
+                    "tags": {
+                      "type": "object",
+                      "defaultValue": {},
+                      "metadata": {
+                        "description": "The tags for the VNet"
+                      }
+                    },
+                    "addressPrefix": {
+                      "type": "string",
+                      "defaultValue": "10.0.0.0/16",
+                      "metadata": {
+                        "description": "The custom address prefix for the VNet"
+                      }
+                    },
+                    "subnets": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "Array of subnet configurations"
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks",
+                      "apiVersion": "2021-02-01",
+                      "name": "[parameters('name')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "addressSpace": {
+                          "addressPrefixes": [
+                            "[parameters('addressPrefix')]"
+                          ]
+                        },
+                        "subnets": "[parameters('subnets')]"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "subnets": {
+                      "type": "array",
+                      "copy": {
+                        "count": "[length(parameters('subnets'))]",
+                        "input": {
+                          "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()]]"
+                        }
+                      }
+                    },
+                    "subnetids": {
+                      "type": "array",
+                      "copy": {
+                        "count": "[length(parameters('subnets'))]",
+                        "input": {
+                          "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()].id]"
+                        }
+                      }
+                    },
+                    "id": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('name'))]"
+                    },
+                    "name": {
+                      "type": "string",
+                      "value": "[parameters('name')]"
+                    },
+                    "vnetSubnets": {
+                      "type": "array",
+                      "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))]"
+              ]
+            },
+            {
+              "condition": "[and(parameters('usePrivateEndpoint'), not(parameters('vnetEnableCustomConfiguration')))]",
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "vnet",
@@ -26780,7 +27678,8 @@
                         "properties": {
                           "addressPrefix": "10.0.1.0/24",
                           "privateEndpointNetworkPolicies": "Enabled",
-                          "privateLinkServiceNetworkPolicies": "Enabled"
+                          "privateLinkServiceNetworkPolicies": "Enabled",
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
                         }
                       },
                       {
@@ -26797,21 +27696,15 @@
                           "addressPrefix": "10.0.3.0/24",
                           "privateEndpointNetworkPolicies": "Enabled",
                           "privateLinkServiceNetworkPolicies": "Enabled",
-                          "delegations": [
-                            {
-                              "id": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
-                              "name": "[parameters('appServicePlanName')]",
-                              "properties": {
-                                "serviceName": "Microsoft.Web/serverFarms"
-                              }
-                            }
-                          ]
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]",
+                          "delegations": "[if(equals(parameters('deploymentTarget'), 'appservice'), createArray(createObject('id', resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName')), 'name', parameters('appServicePlanName'), 'properties', createObject('serviceName', 'Microsoft.Web/serverFarms'))), createArray())]"
                         }
                       },
                       {
                         "name": "vm-subnet",
                         "properties": {
-                          "addressPrefix": "10.0.4.0/24"
+                          "addressPrefix": "10.0.4.0/24",
+                          "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
                         }
                       }
                     ]
@@ -26905,21 +27798,28 @@
                     }
                   }
                 }
-              }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))]"
+              ]
             }
           ],
           "outputs": {
             "appSubnetId": {
               "type": "string",
-              "value": "[if(parameters('usePrivateEndpoint'), reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[2].id, '')]"
+              "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.vnetSubnets.value[2].id, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[2].id), '')]"
             },
             "backendSubnetId": {
               "type": "string",
-              "value": "[if(parameters('usePrivateEndpoint'), reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[0].id, '')]"
+              "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.vnetSubnets.value[0].id, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[0].id), '')]"
             },
             "vnetName": {
               "type": "string",
-              "value": "[if(parameters('usePrivateEndpoint'), reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.name.value, '')]"
+              "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.name.value, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.name.value), '')]"
+            },
+            "networkSecurityGroupId": {
+              "type": "string",
+              "value": "[if(and(parameters('enableCustomNsgRules'), parameters('usePrivateEndpoint')), resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName'))), '')]"
             }
           }
         }

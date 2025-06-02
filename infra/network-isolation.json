@@ -1,0 +1,539 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.1.42791",
+      "templateHash": "14064983612245014988"
+    },
+    "description": "Sets up private networking for all resources, using VNet, private endpoints, and DNS zones."
+  },
+  "parameters": {
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the VNet to create"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The location to create the VNet and private endpoints"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "The tags to apply to all resources"
+      }
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of an existing App Service Plan to connect to the VNet"
+      }
+    },
+    "usePrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": false
+    },
+    "deploymentTarget": {
+      "type": "string",
+      "allowedValues": [
+        "appservice",
+        "containerapps"
+      ]
+    },
+    "vnetEnableCustomConfiguration": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable custom VNet configuration (overrides default settings)"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "Custom VNet address prefix (CIDR notation)"
+      }
+    },
+    "appSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.3.0/24",
+      "metadata": {
+        "description": "App Service integration subnet address prefix"
+      }
+    },
+    "backendSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "Backend services subnet address prefix"
+      }
+    },
+    "privateEndpointSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.2.0/24",
+      "metadata": {
+        "description": "Private endpoints subnet address prefix (used for AzureBastionSubnet in current implementation)"
+      }
+    },
+    "vmSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.4.0/24",
+      "metadata": {
+        "description": "Virtual machine subnet address prefix"
+      }
+    },
+    "enableServiceEndpoints": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable service endpoints for subnets"
+      }
+    },
+    "serviceEndpoints": {
+      "type": "array",
+      "defaultValue": [
+        "Microsoft.Storage",
+        "Microsoft.KeyVault",
+        "Microsoft.AzureCosmosDB"
+      ],
+      "metadata": {
+        "description": "Service endpoints to enable (e.g., Microsoft.Storage, Microsoft.KeyVault)"
+      }
+    },
+    "enableCustomNsgRules": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable custom Network Security Group rules"
+      }
+    },
+    "allowedInboundPorts": {
+      "type": "array",
+      "defaultValue": [
+        "80",
+        "443"
+      ],
+      "metadata": {
+        "description": "Allowed inbound ports for NSG rules (array of port strings)"
+      }
+    },
+    "allowedOutboundPorts": {
+      "type": "array",
+      "defaultValue": [
+        "80",
+        "443",
+        "53"
+      ],
+      "metadata": {
+        "description": "Allowed outbound ports for NSG rules (array of port strings)"
+      }
+    },
+    "allowedSourceAddressPrefixes": {
+      "type": "array",
+      "defaultValue": [
+        "*"
+      ],
+      "metadata": {
+        "description": "Allowed source address prefixes for inbound NSG rules"
+      }
+    },
+    "allowedDestinationAddressPrefixes": {
+      "type": "array",
+      "defaultValue": [
+        "*"
+      ],
+      "metadata": {
+        "description": "Allowed destination address prefixes for outbound NSG rules"
+      }
+    },
+    "nsgRulePriorityStart": {
+      "type": "int",
+      "defaultValue": 1000,
+      "metadata": {
+        "description": "NSG rule priority starting number (rules will increment from this value)"
+      }
+    }
+  },
+  "variables": {
+    "serviceEndpointsEnabled": "[parameters('enableServiceEndpoints')]"
+  },
+  "resources": [
+    {
+      "condition": "[and(parameters('enableCustomNsgRules'), parameters('usePrivateEndpoint'))]",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}-nsg', parameters('vnetName'))]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowHttps",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowHttp",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1001,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "condition": "[and(parameters('usePrivateEndpoint'), parameters('vnetEnableCustomConfiguration'))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "vnet-custom",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('vnetName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "addressPrefix": {
+            "value": "[parameters('vnetAddressPrefix')]"
+          },
+          "subnets": {
+            "value": [
+              {
+                "name": "backend-subnet",
+                "properties": {
+                  "addressPrefix": "[parameters('backendSubnetAddressPrefix')]",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                }
+              },
+              {
+                "name": "AzureBastionSubnet",
+                "properties": {
+                  "addressPrefix": "[parameters('privateEndpointSubnetAddressPrefix')]",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled"
+                }
+              },
+              {
+                "name": "app-int-subnet",
+                "properties": {
+                  "addressPrefix": "[parameters('appSubnetAddressPrefix')]",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]",
+                  "delegations": "[if(equals(parameters('deploymentTarget'), 'appservice'), createArray(createObject('id', resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName')), 'name', parameters('appServicePlanName'), 'properties', createObject('serviceName', 'Microsoft.Web/serverFarms'))), createArray())]"
+                }
+              },
+              {
+                "name": "vm-subnet",
+                "properties": {
+                  "addressPrefix": "[parameters('vmSubnetAddressPrefix')]",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                }
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "8650127669149319691"
+            },
+            "description": "Creates a virtual network with customizable address prefixes and subnets."
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location for the VNet"
+              }
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the VNet"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "The tags for the VNet"
+              }
+            },
+            "addressPrefix": {
+              "type": "string",
+              "defaultValue": "10.0.0.0/16",
+              "metadata": {
+                "description": "The custom address prefix for the VNet"
+              }
+            },
+            "subnets": {
+              "type": "array",
+              "metadata": {
+                "description": "Array of subnet configurations"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2021-02-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('addressPrefix')]"
+                  ]
+                },
+                "subnets": "[parameters('subnets')]"
+              }
+            }
+          ],
+          "outputs": {
+            "subnets": {
+              "type": "array",
+              "copy": {
+                "count": "[length(parameters('subnets'))]",
+                "input": {
+                  "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()]]"
+                }
+              }
+            },
+            "subnetids": {
+              "type": "array",
+              "copy": {
+                "count": "[length(parameters('subnets'))]",
+                "input": {
+                  "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()].id]"
+                }
+              }
+            },
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "vnetSubnets": {
+              "type": "array",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))]"
+      ]
+    },
+    {
+      "condition": "[and(parameters('usePrivateEndpoint'), not(parameters('vnetEnableCustomConfiguration')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "vnet",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[parameters('vnetName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "subnets": {
+            "value": [
+              {
+                "name": "backend-subnet",
+                "properties": {
+                  "addressPrefix": "10.0.1.0/24",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                }
+              },
+              {
+                "name": "AzureBastionSubnet",
+                "properties": {
+                  "addressPrefix": "10.0.2.0/24",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled"
+                }
+              },
+              {
+                "name": "app-int-subnet",
+                "properties": {
+                  "addressPrefix": "10.0.3.0/24",
+                  "privateEndpointNetworkPolicies": "Enabled",
+                  "privateLinkServiceNetworkPolicies": "Enabled",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]",
+                  "delegations": "[if(equals(parameters('deploymentTarget'), 'appservice'), createArray(createObject('id', resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName')), 'name', parameters('appServicePlanName'), 'properties', createObject('serviceName', 'Microsoft.Web/serverFarms'))), createArray())]"
+                }
+              },
+              {
+                "name": "vm-subnet",
+                "properties": {
+                  "addressPrefix": "10.0.4.0/24",
+                  "networkSecurityGroup": "[if(parameters('enableCustomNsgRules'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))), null())]"
+                }
+              }
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "8250569278349870783"
+            },
+            "description": "Creates a virtual network with 3 subnets (for AI, Azure Bastion, App Service)."
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location for the VNet"
+              }
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the VNet"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "The tags for the VNet"
+              }
+            },
+            "subnets": {
+              "type": "array"
+            }
+          },
+          "variables": {
+            "addressPrefix": "10.0.0.0/16"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2021-02-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[variables('addressPrefix')]"
+                  ]
+                },
+                "subnets": "[parameters('subnets')]"
+              }
+            }
+          ],
+          "outputs": {
+            "subnets": {
+              "type": "array",
+              "copy": {
+                "count": "[length(parameters('subnets'))]",
+                "input": {
+                  "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()]]"
+                }
+              }
+            },
+            "subnetids": {
+              "type": "array",
+              "copy": {
+                "count": "[length(parameters('subnets'))]",
+                "input": {
+                  "subnets": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets[copyIndex()].id]"
+                }
+              }
+            },
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            },
+            "vnetSubnets": {
+              "type": "array",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('name')), '2021-02-01').subnets]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "appSubnetId": {
+      "type": "string",
+      "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.vnetSubnets.value[2].id, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[2].id), '')]"
+    },
+    "backendSubnetId": {
+      "type": "string",
+      "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.vnetSubnets.value[0].id, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.vnetSubnets.value[0].id), '')]"
+    },
+    "vnetName": {
+      "type": "string",
+      "value": "[if(parameters('usePrivateEndpoint'), if(parameters('vnetEnableCustomConfiguration'), reference(resourceId('Microsoft.Resources/deployments', 'vnet-custom'), '2022-09-01').outputs.name.value, reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.name.value), '')]"
+    },
+    "networkSecurityGroupId": {
+      "type": "string",
+      "value": "[if(and(parameters('enableCustomNsgRules'), parameters('usePrivateEndpoint')), resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('vnetName'))), '')]"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "test-conditional"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "principalId": {
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    "deploymentTarget": {
+      "value": "appservice"
+    },
+    "openAiHost": {
+      "value": "azure"
+    },
+    "isAzureOpenAiHost": {
+      "value": true
+    },
+    "deployAzureOpenAi": {
+      "value": true
+    },
+    "useAuthentication": {
+      "value": false
+    },
+    "useApplicationInsights": {
+      "value": false
+    },
+    "useUserUpload": {
+      "value": false
+    },
+    "useGPT4V": {
+      "value": false
+    },
+    "useSpeechOutputAzure": {
+      "value": false
+    },
+    "useMediaDescriberAzureCU": {
+      "value": false
+    },
+    "useChatHistoryCosmos": {
+      "value": false
+    },
+    "usePrivateEndpoint": {
+      "value": false
+    },
+    "publicNetworkAccess": {
+      "value": "Enabled"
+    },
+    "bypass": {
+      "value": "AzureServices"
+    },
+    "useIntegratedVectorization": {
+      "value": false
+    },
+    "useLocalPdfParser": {
+      "value": true
+    },
+    "useLocalHtmlParser": {
+      "value": true
+    },
+    "useAgenticRetrieval": {
+      "value": false
+    },
+    "useAiProject": {
+      "value": false
+    },
+    "runningOnGh": {
+      "value": false
+    },
+    "runningOnAdo": {
+      "value": false
+    },
+    "webAppExists": {
+      "value": false
+    },
+    "azureContainerAppsWorkloadProfile": {
+      "value": "Consumption"
+    },
+    "deploySearchService": {
+      "value": true
+    },
+    "deployDocumentIntelligence": {
+      "value": false
+    },
+    "deployStorageAccount": {
+      "value": true
+    },
+    "deployCosmosDB": {
+      "value": false
+    },
+    "deployOpenAI": {
+      "value": true
+    },
+    "deployComputerVision": {
+      "value": false
+    },
+    "deploySpeechService": {
+      "value": false
+    },
+    "deployContentUnderstanding": {
+      "value": false
+    },
+    "deployMonitoring": {
+      "value": false
+    },
+    "deployUserStorage": {
+      "value": false
+    },
+    "deployRedisCache": {
+      "value": false
+    }
+  }
+} 

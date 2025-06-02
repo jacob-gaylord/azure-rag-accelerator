@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
 import styles from "./Answer.module.css";
-import { ChatAppResponse, getCitationFilePath, SpeechConfig } from "../../api";
+import { ChatAppResponse, getCitationFilePath, getAdvancedCitationFilePath, getCitationInfo, SpeechConfig, Config, CitationResult } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
 import { SpeechOutputBrowser } from "./SpeechOutputBrowser";
@@ -20,7 +20,7 @@ interface Props {
     speechConfig: SpeechConfig;
     isSelected?: boolean;
     isStreaming: boolean;
-    onCitationClicked: (filePath: string) => void;
+    onCitationClicked: (filePath: string, citationInfo?: CitationResult) => void;
     onThoughtProcessClicked: () => void;
     onSupportingContentClicked: () => void;
     onFollowupQuestionClicked?: (question: string) => void;
@@ -29,6 +29,7 @@ interface Props {
     showSpeechOutputAzure?: boolean;
     messageId?: string;
     sessionId?: string;
+    config?: Config;
 }
 
 export const Answer = ({
@@ -45,10 +46,11 @@ export const Answer = ({
     showSpeechOutputAzure,
     showSpeechOutputBrowser,
     messageId,
-    sessionId
+    sessionId,
+    config
 }: Props) => {
     const followupQuestions = answer.context?.followup_questions;
-    const parsedAnswer = useMemo(() => parseAnswerToHtml(answer, isStreaming, onCitationClicked), [answer]);
+    const parsedAnswer = useMemo(() => parseAnswerToHtml(answer, isStreaming, onCitationClicked, config), [answer, config]);
     const { t } = useTranslation();
     const sanitizedAnswerHtml = DOMPurify.sanitize(parsedAnswer.answerHtml);
     const [copied, setCopied] = useState(false);
@@ -64,6 +66,18 @@ export const Answer = ({
                 setTimeout(() => setCopied(false), 2000);
             })
             .catch(err => console.error("Failed to copy text: ", err));
+    };
+
+    const handleCitationClick = (citation: string) => {
+        // Generate citation info using advanced strategies if available
+        if (config?.citationStrategies) {
+            const citationInfo = getCitationInfo(citation, config);
+            onCitationClicked(citationInfo.url, citationInfo);
+        } else {
+            // Fall back to legacy citation handling
+            const path = getCitationFilePath(citation, config?.citationBaseUrl);
+            onCitationClicked(path);
+        }
     };
 
     return (
@@ -114,14 +128,59 @@ export const Answer = ({
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>{t("citationWithColon")}</span>
                         {parsedAnswer.citations.map((x, i) => {
-                            const path = getCitationFilePath(x);
+                            // Get citation info for display enhancements
+                            let citationInfo: CitationResult | undefined;
+                            let citationTitle = x;
+
+                            if (config?.citationStrategies) {
+                                citationInfo = getCitationInfo(x, config);
+                                if (citationInfo.requiresAuth) {
+                                    citationTitle = `🔒 ${x}`;
+                                }
+                                if (citationInfo.error) {
+                                    citationTitle = `⚠️ ${x}`;
+                                }
+                            }
+
                             return (
-                                <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
+                                <a
+                                    key={i}
+                                    className={styles.citation}
+                                    title={`${citationTitle}${citationInfo?.requiresAuth ? " (Authentication required)" : ""}${citationInfo?.error ? ` (Error: ${citationInfo.error})` : ""}`}
+                                    onClick={() => handleCitationClick(x)}
+                                    style={{
+                                        ...(citationInfo?.requiresAuth && {
+                                            borderBottom: "1px dashed #666"
+                                        }),
+                                        ...(citationInfo?.error && {
+                                            color: "#d73a49",
+                                            borderBottom: "1px dashed #d73a49"
+                                        })
+                                    }}
+                                >
                                     {`${++i}. ${x}`}
+                                    {citationInfo?.requiresAuth && <span style={{ marginLeft: "4px", fontSize: "0.8em" }}>🔒</span>}
+                                    {citationInfo?.error && <span style={{ marginLeft: "4px", fontSize: "0.8em" }}>⚠️</span>}
                                 </a>
                             );
                         })}
                     </Stack>
+                </Stack.Item>
+            )}
+
+            {/* Show citation strategy info if available for debugging/admin purposes */}
+            {parsedAnswer.citationInfo && config?.citationStrategies && (
+                <Stack.Item>
+                    <div style={{ fontSize: "0.8em", color: "#666", marginTop: "8px" }}>
+                        {parsedAnswer.citationInfo.map((info, i) => (
+                            <div key={i} style={{ marginBottom: "2px" }}>
+                                Strategy: {info.strategyUsed}
+                                {info.metadata?.strategyType && ` (${info.metadata.strategyType})`}
+                                {info.requiresAuth && " - Auth Required"}
+                                {info.error && ` - Error: ${info.error}`}
+                            </div>
+                        ))}
+                    </div>
                 </Stack.Item>
             )}
 

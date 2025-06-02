@@ -1,0 +1,583 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "resourceGroupName": {
+      "value": "${AZURE_RESOURCE_GROUP}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "deploymentTarget": {
+      "value": "appservice"
+    },
+    
+    "openAiServiceName": {
+      "value": "${AZURE_OPENAI_SERVICE}"
+    },
+    "openAiResourceGroupName": {
+      "value": "${AZURE_OPENAI_RESOURCE_GROUP}"
+    },
+    "openAiLocation": {
+      "value": "${AZURE_OPENAI_LOCATION}"
+    },
+    "openAiSkuName": {
+      "value": "S0"
+    },
+    "openAiHost": {
+      "value": "azure"
+    },
+    "azureOpenAiDisableKeys": {
+      "value": true
+    },
+    
+    "computerVisionServiceName": {
+      "value": "${AZURE_COMPUTER_VISION_SERVICE}"
+    },
+    "computerVisionResourceGroupName": {
+      "value": "${AZURE_COMPUTER_VISION_RESOURCE_GROUP}"
+    },
+    "computerVisionResourceGroupLocation": {
+      "value": "${AZURE_COMPUTER_VISION_LOCATION=eastus}"
+    },
+    "computerVisionSkuName": {
+      "value": "S1"
+    },
+    
+    "contentUnderstandingServiceName": {
+      "value": "${AZURE_CONTENT_UNDERSTANDING_SERVICE}"
+    },
+    "contentUnderstandingResourceGroupName": {
+      "value": "${AZURE_CONTENT_UNDERSTANDING_RESOURCE_GROUP}"
+    },
+    
+    "documentIntelligenceServiceName": {
+      "value": "${AZURE_DOCUMENTINTELLIGENCE_SERVICE}"
+    },
+    "documentIntelligenceResourceGroupName": {
+      "value": "${AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP}"
+    },
+    "documentIntelligenceSkuName": {
+      "value": "S0"
+    },
+    "documentIntelligenceResourceGroupLocation": {
+      "value": "${AZURE_DOCUMENTINTELLIGENCE_LOCATION}"
+    },
+    
+    "searchServiceName": {
+      "value": "${AZURE_SEARCH_SERVICE}"
+    },
+    "searchServiceResourceGroupName": {
+      "value": "${AZURE_SEARCH_SERVICE_RESOURCE_GROUP}"
+    },
+    "searchServiceLocation": {
+      "value": "${AZURE_SEARCH_SERVICE_LOCATION}"
+    },
+    "searchServiceSkuName": {
+      "value": "standard"
+    },
+    "searchServiceSemanticRankerLevel": {
+      "value": "standard"
+    },
+    "searchIndexName": {
+      "value": "gptkbindex"
+    },
+    "searchQueryLanguage": {
+      "value": "en-us"
+    },
+    "searchQuerySpeller": {
+      "value": "lexicon"
+    },
+    "searchServiceQueryRewriting": {
+      "value": true
+    },
+    "searchFieldNameEmbedding": {
+      "value": "embedding3"
+    },
+    
+    "storageAccountName": {
+      "value": "${AZURE_STORAGE_ACCOUNT}"
+    },
+    "storageResourceGroupName": {
+      "value": "${AZURE_STORAGE_RESOURCE_GROUP}"
+    },
+    "storageSkuName": {
+      "value": "Standard_RAGRS"
+    },
+    
+    "appServicePlanName": {
+      "value": "${AZURE_APP_SERVICE_PLAN}"
+    },
+    "appServicePlanTier": {
+      "value": "PremiumV3"
+    },
+    "appServicePlanSize": {
+      "value": "P1V3"
+    },
+    "appServicePlanCapacity": {
+      "value": 3
+    },
+    "appServiceEnableAutoscale": {
+      "value": true
+    },
+    "appServiceAutoscaleMinInstances": {
+      "value": 2
+    },
+    "appServiceAutoscaleMaxInstances": {
+      "value": 10
+    },
+    "appServiceScaleOutCpuThreshold": {
+      "value": 60
+    },
+    "appServiceScaleInCpuThreshold": {
+      "value": 20
+    },
+    "appServiceScaleOutMemoryThreshold": {
+      "value": 70
+    },
+    "appServiceScaleInMemoryThreshold": {
+      "value": 30
+    },
+    "appServiceAlwaysOn": {
+      "value": true
+    },
+    "appServiceUse32BitWorkerProcess": {
+      "value": false
+    },
+    "appServiceNumberOfWorkers": {
+      "value": 2
+    },
+    "appServiceMinimumElasticInstanceCount": {
+      "value": 1
+    },
+    "appServiceHealthCheckPath": {
+      "value": "/health"
+    },
+    "appServiceEnableDeploymentSlots": {
+      "value": true
+    },
+    "appServiceDeploymentSlotsCount": {
+      "value": 2
+    },
+    "appServiceDeploymentSlotNames": {
+      "value": "staging,canary"
+    },
+    "backendServiceName": {
+      "value": "${AZURE_APP_SERVICE}"
+    },
+    
+    "chatGptModelName": {
+      "value": "${AZURE_OPENAI_CHATGPT_MODEL}"
+    },
+    "chatGptDeploymentName": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT}"
+    },
+    "chatGptDeploymentVersion": {
+      "value": "${AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION}"
+    },
+    "chatGptDeploymentSkuName": {
+      "value": "ProvisionedThroughput"
+    },
+    "chatGptDeploymentCapacity": {
+      "value": 100
+    },
+    
+    "embeddingModelName": {
+      "value": "${AZURE_OPENAI_EMB_MODEL_NAME}"
+    },
+    "embeddingDeploymentName": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT}"
+    },
+    "embeddingDeploymentVersion": {
+      "value": "${AZURE_OPENAI_EMB_DEPLOYMENT_VERSION}"
+    },
+    "embeddingDeploymentSkuName": {
+      "value": "ProvisionedThroughput"
+    },
+    "embeddingDeploymentCapacity": {
+      "value": 100
+    },
+    "embeddingDimensions": {
+      "value": "${AZURE_OPENAI_EMB_DIMENSIONS}"
+    },
+    
+    "gpt4vModelName": {
+      "value": "${AZURE_OPENAI_GPT4V_MODEL}"
+    },
+    "gpt4vDeploymentName": {
+      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT}"
+    },
+    "gpt4vDeploymentVersion": {
+      "value": "${AZURE_OPENAI_GPT4V_DEPLOYMENT_VERSION}"
+    },
+    "gpt4vDeploymentSkuName": {
+      "value": "Standard"
+    },
+    "gpt4vDeploymentCapacity": {
+      "value": 30
+    },
+    
+    "evalModelName": {
+      "value": "${AZURE_OPENAI_EVAL_MODEL}"
+    },
+    "evalModelVersion": {
+      "value": "${AZURE_OPENAI_EVAL_MODEL_VERSION}"
+    },
+    "evalDeploymentName": {
+      "value": "${AZURE_OPENAI_EVAL_DEPLOYMENT}"
+    },
+    "evalDeploymentSkuName": {
+      "value": "Standard"
+    },
+    "evalDeploymentCapacity": {
+      "value": 10
+    },
+    
+    "searchAgentModelName": {
+      "value": "${AZURE_OPENAI_SEARCHAGENT_MODEL}"
+    },
+    "searchAgentModelVersion": {
+      "value": "${AZURE_OPENAI_SEARCHAGENT_MODEL_VERSION}"
+    },
+    "searchAgentDeploymentName": {
+      "value": "${AZURE_OPENAI_SEARCHAGENT_DEPLOYMENT}"
+    },
+    "searchAgentDeploymentSkuName": {
+      "value": "Standard"
+    },
+    "searchAgentDeploymentCapacity": {
+      "value": 30
+    },
+    
+    "defaultReasoningEffort": {
+      "value": "high"
+    },
+    
+    "useApplicationInsights": {
+      "value": true
+    },
+    "applicationInsightsName": {
+      "value": "${AZURE_APPLICATION_INSIGHTS}"
+    },
+    "applicationInsightsDashboardName": {
+      "value": "${AZURE_APPLICATION_INSIGHTS_DASHBOARD}"
+    },
+    "logAnalyticsName": {
+      "value": "${AZURE_LOG_ANALYTICS}"
+    },
+    
+    "useVectors": {
+      "value": true
+    },
+    "useGPT4V": {
+      "value": true
+    },
+    "useEval": {
+      "value": true
+    },
+    "enableLanguagePicker": {
+      "value": true
+    },
+    "useSpeechInputBrowser": {
+      "value": true
+    },
+    "useSpeechOutputBrowser": {
+      "value": true
+    },
+    "useSpeechOutputAzure": {
+      "value": true
+    },
+    "speechServiceName": {
+      "value": "${AZURE_SPEECH_SERVICE}"
+    },
+    "speechServiceSkuName": {
+      "value": "S0"
+    },
+    "speechServiceResourceGroupName": {
+      "value": "${AZURE_SPEECH_SERVICE_RESOURCE_GROUP}"
+    },
+    "speechServiceLocation": {
+      "value": "${AZURE_SPEECH_SERVICE_LOCATION}"
+    },
+    "speechServiceVoice": {
+      "value": "${AZURE_SPEECH_SERVICE_VOICE}"
+    },
+    "useChatHistoryBrowser": {
+      "value": false
+    },
+    "useChatHistoryCosmos": {
+      "value": true
+    },
+    
+    "cosmosDbSkuName": {
+      "value": "provisioned"
+    },
+    "cosmodDbResourceGroupName": {
+      "value": "${AZURE_COSMOSDB_RESOURCE_GROUP}"
+    },
+    "cosmosDbLocation": {
+      "value": "${AZURE_COSMOSDB_LOCATION}"
+    },
+    "cosmosDbAccountName": {
+      "value": "${AZURE_COSMOSDB_ACCOUNT}"
+    },
+    "cosmosDbThroughput": {
+      "value": 1000
+    },
+    "cosmosDbConsistencyLevel": {
+      "value": "Session"
+    },
+    "cosmosDbMaxStalenessPrefix": {
+      "value": 100000
+    },
+    "cosmosDbMaxIntervalInSeconds": {
+      "value": 5
+    },
+    "cosmosDbBackupPolicyType": {
+      "value": "Continuous"
+    },
+    "cosmosDbBackupIntervalInMinutes": {
+      "value": 60
+    },
+    "cosmosDbBackupRetentionInHours": {
+      "value": 720
+    },
+    "cosmosDbGeoRedundantBackup": {
+      "value": true
+    },
+    "cosmosDbEnableMultipleWriteLocations": {
+      "value": true
+    },
+    "cosmosDbAdditionalRegions": {
+      "value": ["West US 2", "West Europe"]
+    },
+    "cosmosDbEnableAutoscale": {
+      "value": true
+    },
+    "cosmosDbAutoscaleMaxThroughput": {
+      "value": 10000
+    },
+    "cosmosDbEnableAnalyticalStorage": {
+      "value": true
+    },
+    "cosmosDbAnalyticalStoreTtl": {
+      "value": -1
+    },
+    "cosmosDbEnableZoneRedundancy": {
+      "value": true
+    },
+    "cosmosDbNetworkAclBypass": {
+      "value": "AzureServices"
+    },
+    
+    "useAuthentication": {
+      "value": true
+    },
+    "enforceAccessControl": {
+      "value": true
+    },
+    "disableAppServicesAuthentication": {
+      "value": false
+    },
+    "enableGlobalDocuments": {
+      "value": true
+    },
+    "enableUnauthenticatedAccess": {
+      "value": false
+    },
+    "authTenantId": {
+      "value": "${AZURE_AUTH_TENANT_ID}"
+    },
+    "serverAppId": {
+      "value": "${AZURE_SERVER_APP_ID}"
+    },
+    "serverAppSecret": {
+      "value": "${AZURE_SERVER_APP_SECRET}"
+    },
+    "clientAppId": {
+      "value": "${AZURE_CLIENT_APP_ID}"
+    },
+    "clientAppSecret": {
+      "value": "${AZURE_CLIENT_APP_SECRET}"
+    },
+    "allowedOrigin": {
+      "value": "${ALLOWED_ORIGIN}"
+    },
+    
+    "publicNetworkAccess": {
+      "value": "Disabled"
+    },
+    "usePrivateEndpoint": {
+      "value": true
+    },
+    "bypass": {
+      "value": "AzureServices"
+    },
+    
+    "vnetEnableCustomConfiguration": {
+      "value": true
+    },
+    "vnetAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "appSubnetAddressPrefix": {
+      "value": "10.0.3.0/24"
+    },
+    "backendSubnetAddressPrefix": {
+      "value": "10.0.1.0/24"
+    },
+    "privateEndpointSubnetAddressPrefix": {
+      "value": "10.0.2.0/24"
+    },
+    "vmSubnetAddressPrefix": {
+      "value": "10.0.4.0/24"
+    },
+    "bastionSubnetAddressPrefix": {
+      "value": "10.0.5.0/24"
+    },
+    "enableGranularPrivateEndpoints": {
+      "value": true
+    },
+    "enableCosmosDbPrivateEndpoint": {
+      "value": true
+    },
+    "enableStoragePrivateEndpoint": {
+      "value": true
+    },
+    "enableAppServicePrivateEndpoint": {
+      "value": true
+    },
+    "enableSearchPrivateEndpoint": {
+      "value": true
+    },
+    "enableOpenAiPrivateEndpoint": {
+      "value": true
+    },
+    "enableComputerVisionPrivateEndpoint": {
+      "value": true
+    },
+    "enableDocumentIntelligencePrivateEndpoint": {
+      "value": true
+    },
+    "enableSpeechPrivateEndpoint": {
+      "value": true
+    },
+    "enableCustomNsgRules": {
+      "value": true
+    },
+    "allowedInboundPorts": {
+      "value": ["80", "443"]
+    },
+    "allowedOutboundPorts": {
+      "value": ["80", "443", "53", "1433", "3306"]
+    },
+    "allowedSourceAddressPrefixes": {
+      "value": ["10.0.0.0/16"]
+    },
+    "allowedDestinationAddressPrefixes": {
+      "value": ["10.0.0.0/16", "*"]
+    },
+    "nsgRulePriorityStart": {
+      "value": 1000
+    },
+    "enableServiceEndpoints": {
+      "value": true
+    },
+    "serviceEndpoints": {
+      "value": ["Microsoft.Storage", "Microsoft.KeyVault", "Microsoft.AzureCosmosDB", "Microsoft.CognitiveServices", "Microsoft.Sql"]
+    },
+    "enableVnetPeering": {
+      "value": false
+    },
+    "enableDdosProtection": {
+      "value": true
+    },
+    "ddosProtectionPlanId": {
+      "value": "${AZURE_DDOS_PROTECTION_PLAN_ID=}"
+    },
+    "customDnsServers": {
+      "value": []
+    },
+    "enablePrivateDnsAutoRegistration": {
+      "value": true
+    },
+    "customPrivateDnsZones": {
+      "value": []
+    },
+    
+    "useIntegratedVectorization": {
+      "value": true
+    },
+    "useUserUpload": {
+      "value": true
+    },
+    "useLocalPdfParser": {
+      "value": false
+    },
+    "useLocalHtmlParser": {
+      "value": false
+    },
+    "useMediaDescriberAzureCU": {
+      "value": true
+    },
+    "useAiProject": {
+      "value": true
+    },
+    "useAgenticRetrieval": {
+      "value": true
+    },
+    
+    "runningOnGh": {
+      "value": false
+    },
+    "runningOnAdo": {
+      "value": false
+    },
+    "webAppExists": {
+      "value": false
+    },
+    "azureContainerAppsWorkloadProfile": {
+      "value": "Consumption"
+    },
+    
+    "deploySearchService": {
+      "value": true
+    },
+    "deployDocumentIntelligence": {
+      "value": true
+    },
+    "deployStorageAccount": {
+      "value": true
+    },
+    "deployCosmosDB": {
+      "value": true
+    },
+    "deployOpenAI": {
+      "value": true
+    },
+    "deployComputerVision": {
+      "value": true
+    },
+    "deploySpeechService": {
+      "value": true
+    },
+    "deployContentUnderstanding": {
+      "value": true
+    },
+    "deployMonitoring": {
+      "value": true
+    },
+    "deployUserStorage": {
+      "value": true
+    },
+    "deployRedisCache": {
+      "value": true
+    }
+  }
+} 

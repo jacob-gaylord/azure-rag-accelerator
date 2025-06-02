@@ -64,6 +64,7 @@ The repo includes sample data so it's ready to try end to end. In this sample ap
 - Optional usage of [GPT-4 with vision](/docs/gpt4v.md) to reason over image-heavy documents
 - Optional addition of [speech input/output](/docs/deploy_features.md#enabling-speech-inputoutput) for accessibility
 - Optional automation of [user login and data access](/docs/login_and_acl.md) via Microsoft Entra
+- **Configurable citation linking** to redirect document citations to external systems like SharePoint, content management systems, or cloud storage - see [citation linking guide](/docs/configurable-citation-linking.md)
 - Performance tracing and monitoring with Application Insights
 
 ### Architecture Diagram
@@ -182,6 +183,46 @@ It will look like the following:
 !['Output from running azd up'](docs/images/endpoint.png)
 
 > NOTE: It may take 5-10 minutes after you see 'SUCCESS' for the application to be fully deployed. If you see a "Python Developer" welcome screen or an error page, then wait a bit and refresh the page.
+
+### Environment-Specific Deployments
+
+For production use, you may want to deploy different configurations optimized for specific environments. The Azure RAG Accelerator includes three pre-configured parameter files:
+
+#### Quick Environment Deployments
+
+**Development** (cost-optimized, ~$265-300/month):
+```shell
+az deployment group create \
+  --resource-group rg-ragchat-dev \
+  --template-file infra/main.bicep \
+  --parameters infra/dev.parameters.json \
+  --parameters environmentName=myragchat-dev \
+  --parameters principalId=$(az ad signed-in-user show --query id --output tsv)
+```
+
+**Staging** (production-like testing, ~$350-450/month):
+```shell
+az deployment group create \
+  --resource-group rg-ragchat-staging \
+  --template-file infra/main.bicep \
+  --parameters infra/staging.parameters.json \
+  --parameters environmentName=myragchat-staging \
+  --parameters principalId=$(az ad signed-in-user show --query id --output tsv)
+```
+
+**Production** (full enterprise deployment, ~$600-800/month):
+```shell
+az deployment group create \
+  --resource-group rg-ragchat-prod \
+  --template-file infra/main.bicep \
+  --parameters infra/prod.parameters.json \
+  --parameters environmentName=myragchat-prod \
+  --parameters principalId=$(az ad signed-in-user show --query id --output tsv)
+```
+
+For comprehensive guidance on environment-specific deployments, parameter customization, and cost optimization strategies, see:
+- [Environment-Specific Deployments Guide](docs/environment-deployments.md)
+- [Deployment Parameters Reference](docs/deployment-parameters.md)
 
 ### Deploying again
 

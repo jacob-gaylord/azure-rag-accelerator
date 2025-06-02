@@ -102,7 +102,61 @@
       "value": "${AZURE_APP_SERVICE_PLAN}"
     },
     "appServiceSkuName": {
-      "value": "${AZURE_APP_SERVICE_SKU=B1}"
+      "value": "${AZURE_APP_SERVICE_SKU_NAME}"
+    },
+    "appServicePlanTier": {
+      "value": "${AZURE_APP_SERVICE_PLAN_TIER=Basic}"
+    },
+    "appServicePlanSize": {
+      "value": "${AZURE_APP_SERVICE_PLAN_SIZE=B1}"
+    },
+    "appServicePlanCapacity": {
+      "value": "${AZURE_APP_SERVICE_PLAN_CAPACITY=1}"
+    },
+    "appServiceEnableAutoscale": {
+      "value": "${AZURE_APP_SERVICE_ENABLE_AUTOSCALE=false}"
+    },
+    "appServiceAutoscaleMinInstances": {
+      "value": "${AZURE_APP_SERVICE_AUTOSCALE_MIN_INSTANCES=1}"
+    },
+    "appServiceAutoscaleMaxInstances": {
+      "value": "${AZURE_APP_SERVICE_AUTOSCALE_MAX_INSTANCES=10}"
+    },
+    "appServiceScaleOutCpuThreshold": {
+      "value": "${AZURE_APP_SERVICE_SCALE_OUT_CPU_THRESHOLD=70}"
+    },
+    "appServiceScaleInCpuThreshold": {
+      "value": "${AZURE_APP_SERVICE_SCALE_IN_CPU_THRESHOLD=30}"
+    },
+    "appServiceScaleOutMemoryThreshold": {
+      "value": "${AZURE_APP_SERVICE_SCALE_OUT_MEMORY_THRESHOLD=80}"
+    },
+    "appServiceScaleInMemoryThreshold": {
+      "value": "${AZURE_APP_SERVICE_SCALE_IN_MEMORY_THRESHOLD=40}"
+    },
+    "appServiceHealthCheckPath": {
+      "value": "${AZURE_APP_SERVICE_HEALTH_CHECK_PATH=}"
+    },
+    "appServiceAlwaysOn": {
+      "value": "${AZURE_APP_SERVICE_ALWAYS_ON=true}"
+    },
+    "appServiceUse32BitWorkerProcess": {
+      "value": "${AZURE_APP_SERVICE_USE_32BIT_WORKER_PROCESS=false}"
+    },
+    "appServiceNumberOfWorkers": {
+      "value": "${AZURE_APP_SERVICE_NUMBER_OF_WORKERS=1}"
+    },
+    "appServiceMinimumElasticInstanceCount": {
+      "value": "${AZURE_APP_SERVICE_MINIMUM_ELASTIC_INSTANCE_COUNT=0}"
+    },
+    "appServiceEnableDeploymentSlots": {
+      "value": "${AZURE_APP_SERVICE_ENABLE_DEPLOYMENT_SLOTS=false}"
+    },
+    "appServiceDeploymentSlotsCount": {
+      "value": "${AZURE_APP_SERVICE_DEPLOYMENT_SLOTS_COUNT=1}"
+    },
+    "appServiceDeploymentSlotNames": {
+      "value": "${AZURE_APP_SERVICE_DEPLOYMENT_SLOT_NAMES=staging}"
     },
     "backendServiceName": {
       "value": "${AZURE_APP_SERVICE}"
@@ -272,6 +326,153 @@
     "cosmosDbThroughput": {
       "value": "${AZURE_COSMOSDB_THROUGHPUT}"
     },
+    "cosmosDbConsistencyLevel": {
+      "value": "${AZURE_COSMOSDB_CONSISTENCY_LEVEL=Session}"
+    },
+    "cosmosDbMaxStalenessPrefix": {
+      "value": "${AZURE_COSMOSDB_MAX_STALENESS_PREFIX=100000}"
+    },
+    "cosmosDbMaxIntervalInSeconds": {
+      "value": "${AZURE_COSMOSDB_MAX_INTERVAL_SECONDS=5}"
+    },
+    "cosmosDbBackupPolicyType": {
+      "value": "${AZURE_COSMOSDB_BACKUP_POLICY_TYPE=Periodic}"
+    },
+    "cosmosDbBackupIntervalInMinutes": {
+      "value": "${AZURE_COSMOSDB_BACKUP_INTERVAL_MINUTES=240}"
+    },
+    "cosmosDbBackupRetentionInHours": {
+      "value": "${AZURE_COSMOSDB_BACKUP_RETENTION_HOURS=8}"
+    },
+    "cosmosDbGeoRedundantBackup": {
+      "value": "${AZURE_COSMOSDB_GEO_REDUNDANT_BACKUP=false}"
+    },
+    "cosmosDbEnableMultipleWriteLocations": {
+      "value": "${AZURE_COSMOSDB_ENABLE_MULTIPLE_WRITE_LOCATIONS=false}"
+    },
+    "cosmosDbAdditionalRegions": {
+      "value": "${AZURE_COSMOSDB_ADDITIONAL_REGIONS=[]}"
+    },
+    "cosmosDbEnableAutoscale": {
+      "value": "${AZURE_COSMOSDB_ENABLE_AUTOSCALE=false}"
+    },
+    "cosmosDbAutoscaleMaxThroughput": {
+      "value": "${AZURE_COSMOSDB_AUTOSCALE_MAX_THROUGHPUT=4000}"
+    },
+    "cosmosDbEnableAnalyticalStorage": {
+      "value": "${AZURE_COSMOSDB_ENABLE_ANALYTICAL_STORAGE=false}"
+    },
+    "cosmosDbAnalyticalStoreTtl": {
+      "value": "${AZURE_COSMOSDB_ANALYTICAL_STORE_TTL=-1}"
+    },
+    "cosmosDbEnableZoneRedundancy": {
+      "value": "${AZURE_COSMOSDB_ENABLE_ZONE_REDUNDANCY=false}"
+    },
+    "cosmosDbNetworkAclBypass": {
+      "value": "${AZURE_COSMOSDB_NETWORK_ACL_BYPASS=AzureServices}"
+    },
+    "vnetEnableCustomConfiguration": {
+      "value": "${AZURE_VNET_ENABLE_CUSTOM_CONFIGURATION=false}"
+    },
+    "vnetAddressPrefix": {
+      "value": "${AZURE_VNET_ADDRESS_PREFIX=10.0.0.0/16}"
+    },
+    "appSubnetAddressPrefix": {
+      "value": "${AZURE_APP_SUBNET_ADDRESS_PREFIX=10.0.3.0/24}"
+    },
+    "backendSubnetAddressPrefix": {
+      "value": "${AZURE_BACKEND_SUBNET_ADDRESS_PREFIX=10.0.1.0/24}"
+    },
+    "privateEndpointSubnetAddressPrefix": {
+      "value": "${AZURE_PRIVATE_ENDPOINT_SUBNET_ADDRESS_PREFIX=10.0.2.0/24}"
+    },
+    "vmSubnetAddressPrefix": {
+      "value": "${AZURE_VM_SUBNET_ADDRESS_PREFIX=10.0.4.0/24}"
+    },
+    "bastionSubnetAddressPrefix": {
+      "value": "${AZURE_BASTION_SUBNET_ADDRESS_PREFIX=10.0.5.0/24}"
+    },
+    "enableGranularPrivateEndpoints": {
+      "value": "${AZURE_ENABLE_GRANULAR_PRIVATE_ENDPOINTS=false}"
+    },
+    "enableCosmosDbPrivateEndpoint": {
+      "value": "${AZURE_ENABLE_COSMOSDB_PRIVATE_ENDPOINT=false}"
+    },
+    "enableStoragePrivateEndpoint": {
+      "value": "${AZURE_ENABLE_STORAGE_PRIVATE_ENDPOINT=false}"
+    },
+    "enableAppServicePrivateEndpoint": {
+      "value": "${AZURE_ENABLE_APPSERVICE_PRIVATE_ENDPOINT=false}"
+    },
+    "enableSearchPrivateEndpoint": {
+      "value": "${AZURE_ENABLE_SEARCH_PRIVATE_ENDPOINT=false}"
+    },
+    "enableOpenAiPrivateEndpoint": {
+      "value": "${AZURE_ENABLE_OPENAI_PRIVATE_ENDPOINT=false}"
+    },
+    "enableComputerVisionPrivateEndpoint": {
+      "value": "${AZURE_ENABLE_COMPUTERVISION_PRIVATE_ENDPOINT=false}"
+    },
+    "enableDocumentIntelligencePrivateEndpoint": {
+      "value": "${AZURE_ENABLE_DOCUMENTINTELLIGENCE_PRIVATE_ENDPOINT=false}"
+    },
+    "enableSpeechPrivateEndpoint": {
+      "value": "${AZURE_ENABLE_SPEECH_PRIVATE_ENDPOINT=false}"
+    },
+    "enableCustomNsgRules": {
+      "value": "${AZURE_ENABLE_CUSTOM_NSG_RULES=false}"
+    },
+    "allowedInboundPorts": {
+      "value": "${AZURE_ALLOWED_INBOUND_PORTS=[\"80\",\"443\"]}"
+    },
+    "allowedOutboundPorts": {
+      "value": "${AZURE_ALLOWED_OUTBOUND_PORTS=[\"80\",\"443\",\"53\"]}"
+    },
+    "allowedSourceAddressPrefixes": {
+      "value": "${AZURE_ALLOWED_SOURCE_ADDRESS_PREFIXES=[\"*\"]}"
+    },
+    "allowedDestinationAddressPrefixes": {
+      "value": "${AZURE_ALLOWED_DESTINATION_ADDRESS_PREFIXES=[\"*\"]}"
+    },
+    "nsgRulePriorityStart": {
+      "value": "${AZURE_NSG_RULE_PRIORITY_START=1000}"
+    },
+    "enableServiceEndpoints": {
+      "value": "${AZURE_ENABLE_SERVICE_ENDPOINTS=false}"
+    },
+    "serviceEndpoints": {
+      "value": "${AZURE_SERVICE_ENDPOINTS=[\"Microsoft.Storage\",\"Microsoft.KeyVault\",\"Microsoft.AzureCosmosDB\"]}"
+    },
+    "enableVnetPeering": {
+      "value": "${AZURE_ENABLE_VNET_PEERING=false}"
+    },
+    "remoteVnetResourceId": {
+      "value": "${AZURE_REMOTE_VNET_RESOURCE_ID=}"
+    },
+    "allowForwardedTraffic": {
+      "value": "${AZURE_ALLOW_FORWARDED_TRAFFIC=false}"
+    },
+    "allowGatewayTransit": {
+      "value": "${AZURE_ALLOW_GATEWAY_TRANSIT=false}"
+    },
+    "useRemoteGateways": {
+      "value": "${AZURE_USE_REMOTE_GATEWAYS=false}"
+    },
+    "enableDdosProtection": {
+      "value": "${AZURE_ENABLE_DDOS_PROTECTION=false}"
+    },
+    "ddosProtectionPlanId": {
+      "value": "${AZURE_DDOS_PROTECTION_PLAN_ID=}"
+    },
+    "customDnsServers": {
+      "value": "${AZURE_CUSTOM_DNS_SERVERS=[]}"
+    },
+    "enablePrivateDnsAutoRegistration": {
+      "value": "${AZURE_ENABLE_PRIVATE_DNS_AUTO_REGISTRATION=true}"
+    },
+    "customPrivateDnsZones": {
+      "value": "${AZURE_CUSTOM_PRIVATE_DNS_ZONES=[]}"
+    },
     "speechServiceVoice": {
       "value": "${AZURE_SPEECH_SERVICE_VOICE}"
     },
@@ -352,6 +553,39 @@
     },
     "useAgenticRetrieval": {
       "value": "${USE_AGENTIC_RETRIEVAL=false}"
+    },
+    "deploySearchService": {
+      "value": "${AZURE_DEPLOY_SEARCH_SERVICE=true}"
+    },
+    "deployDocumentIntelligence": {
+      "value": "${AZURE_DEPLOY_DOCUMENT_INTELLIGENCE=true}"
+    },
+    "deployStorageAccount": {
+      "value": "${AZURE_DEPLOY_STORAGE_ACCOUNT=true}"
+    },
+    "deployCosmosDB": {
+      "value": "${AZURE_DEPLOY_COSMOSDB=true}"
+    },
+    "deployOpenAI": {
+      "value": "${AZURE_DEPLOY_OPENAI=true}"
+    },
+    "deployComputerVision": {
+      "value": "${AZURE_DEPLOY_COMPUTER_VISION=true}"
+    },
+    "deploySpeechService": {
+      "value": "${AZURE_DEPLOY_SPEECH_SERVICE=true}"
+    },
+    "deployContentUnderstanding": {
+      "value": "${AZURE_DEPLOY_CONTENT_UNDERSTANDING=true}"
+    },
+    "deployMonitoring": {
+      "value": "${AZURE_DEPLOY_MONITORING=true}"
+    },
+    "deployUserStorage": {
+      "value": "${AZURE_DEPLOY_USER_STORAGE=true}"
+    },
+    "deployRedisCache": {
+      "value": "${AZURE_DEPLOY_REDIS_CACHE=false}"
     }
   }
 }

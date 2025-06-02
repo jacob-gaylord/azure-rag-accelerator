@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { ChatAppResponse, getCitationFilePath } from "../../api";
+import { ChatAppResponse, getCitationFilePath, getAdvancedCitationFilePath, getCitationInfo, Config, CitationResult } from "../../api";
 
 type HtmlParsedAnswer = {
     answerHtml: string;
     citations: string[];
+    citationInfo?: CitationResult[]; // Additional citation metadata
 };
 
 // Function to validate citation format and check if dataPoint starts with possible citation
@@ -30,9 +31,15 @@ function isCitationValid(contextDataPoints: any, citationCandidate: string): boo
     return isValidCitation;
 }
 
-export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean, onCitationClicked: (citationFilePath: string) => void): HtmlParsedAnswer {
+export function parseAnswerToHtml(
+    answer: ChatAppResponse,
+    isStreaming: boolean,
+    onCitationClicked: (citationFilePath: string, citationInfo?: CitationResult) => void,
+    config?: Config
+): HtmlParsedAnswer {
     const contextDataPoints = answer.context.data_points;
     const citations: string[] = [];
+    const citationInfos: CitationResult[] = [];
 
     // Trim any whitespace from the end of the answer after removing follow-up questions
     let parsedAnswer = answer.message.content.trim();
@@ -64,6 +71,23 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
                 return `[${part}]`;
             }
 
+            let citationInfo: CitationResult | undefined;
+            let path: string;
+
+            // Try to use advanced citation strategies if available
+            if (config?.citationStrategies) {
+                citationInfo = getCitationInfo(part, config);
+                path = citationInfo.url;
+
+                // Store citation info for potential use by the caller
+                if (citations.indexOf(part) === -1) {
+                    citationInfos.push(citationInfo);
+                }
+            } else {
+                // Fall back to legacy citation handling
+                path = getCitationFilePath(part, config?.citationBaseUrl);
+            }
+
             if (citations.indexOf(part) !== -1) {
                 citationIndex = citations.indexOf(part) + 1;
             } else {
@@ -71,11 +95,33 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
                 citationIndex = citations.length;
             }
 
-            const path = getCitationFilePath(part);
-
             return renderToStaticMarkup(
-                <a className="supContainer" title={part} onClick={() => onCitationClicked(path)}>
+                <a
+                    className="supContainer"
+                    title={part}
+                    onClick={() => onCitationClicked(path, citationInfo)}
+                    style={{
+                        cursor: "pointer",
+                        // Add visual indication if authentication is required
+                        ...(citationInfo?.requiresAuth && {
+                            borderBottom: "1px dashed #666",
+                            position: "relative"
+                        })
+                    }}
+                >
                     <sup>{citationIndex}</sup>
+                    {citationInfo?.requiresAuth && (
+                        <span
+                            title="This citation requires authentication"
+                            style={{
+                                fontSize: "0.7em",
+                                color: "#666",
+                                marginLeft: "2px"
+                            }}
+                        >
+                            🔒
+                        </span>
+                    )}
                 </a>
             );
         }
@@ -83,6 +129,7 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
 
     return {
         answerHtml: fragments.join(""),
-        citations
+        citations,
+        citationInfo: citationInfos.length > 0 ? citationInfos : undefined
     };
 }

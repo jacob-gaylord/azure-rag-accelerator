@@ -8,6 +8,7 @@ import time
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any, Union, cast
+from datetime import datetime
 
 from azure.cognitiveservices.speech import (
     ResultReason,
@@ -69,6 +70,7 @@ from config import (
     CONFIG_CHAT_HISTORY_BROWSER_ENABLED,
     CONFIG_CHAT_HISTORY_COSMOS_ENABLED,
     CONFIG_CHAT_VISION_APPROACH,
+    CONFIG_CITATION_BASE_URL,
     CONFIG_CREDENTIAL,
     CONFIG_DEFAULT_REASONING_EFFORT,
     CONFIG_GPT4V_DEPLOYED,
@@ -90,11 +92,18 @@ from config import (
     CONFIG_USER_BLOB_CONTAINER_CLIENT,
     CONFIG_USER_UPLOAD_ENABLED,
     CONFIG_VECTOR_SEARCH_ENABLED,
+    CONFIG_CITATION_STRATEGIES,
 )
 from core.authentication import AuthenticationHelper
 from core.sessionhelper import create_session_id
 from decorators import authenticated, authenticated_path
 from error import error_dict, error_response
+from citation_auth_handler import (
+    get_citation_security_system,
+    CitationAccessRequest,
+    CitationAccessResponse,
+)
+from citation_strategies import load_citation_strategies_config, CitationStrategyFactory
 from prepdocs import (
     clean_key_if_exists,
     setup_embeddings_service,
@@ -175,6 +184,157 @@ async def content_file(path: str, auth_claims: dict[str, Any]):
     await blob.readinto(blob_file)
     blob_file.seek(0)
     return await send_file(blob_file, mimetype=mime_type, as_attachment=False, attachment_filename=path)
+
+
+@bp.route("/citation/secure/<path>", methods=["GET"])
+@authenticated
+async def secure_citation(path: str, auth_claims: dict[str, Any]):
+    """
+    Secure endpoint for accessing protected citation resources.
+    Handles authentication, token validation, and proxying requests to protected resources.
+    """
+    try:
+        # Get security system components
+        security_validator, auth_manager, citation_proxy = get_citation_security_system()
+        
+        # Get user information from auth claims
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        session_id = request.headers.get("X-Session-ID", "unknown")
+        
+        # Validate CSRF token if provided
+        csrf_token = request.headers.get("X-CSRF-Token")
+        if csrf_token and not security_validator.validate_csrf_token(csrf_token, session_id):
+            current_app.logger.warning(f"Invalid CSRF token for user {user_id}")
+            return jsonify({"error": "Invalid CSRF token"}), 403
+        
+        # Get citation token from query params or headers
+        citation_token = request.args.get("token") or request.headers.get("X-Citation-Token")
+        if citation_token:
+            # Validate the citation token
+            token_payload = security_validator.validate_citation_token(citation_token)
+            if not token_payload:
+                return jsonify({"error": "Invalid or expired citation token"}), 401
+            
+            # Verify the user matches the token
+            if token_payload.get("user_id") != user_id:
+                current_app.logger.warning(f"User ID mismatch in citation token: {user_id} vs {token_payload.get('user_id')}")
+                return jsonify({"error": "Unauthorized access"}), 403
+        
+        # Load citation strategies configuration
+        strategies_config = load_citation_strategies_config()
+        strategy_factory = CitationStrategyFactory(strategies_config)
+        
+        # Find the appropriate strategy for this path
+        strategy = strategy_factory.get_best_strategy_for_file(path)
+        if not strategy or not strategy.config.authentication:
+            # If no authenticated strategy is needed, redirect to regular content endpoint
+            return jsonify({"redirect": f"/content/{path}"}), 302
+        
+        # Create citation access request
+        access_request = CitationAccessRequest(
+            citation_url=f"{strategy.config.base_url.rstrip('/')}/{path.lstrip('/')}",
+            user_id=user_id,
+            session_id=session_id,
+            strategy_name=strategy.config.name,
+            timestamp=datetime.utcnow(),
+            client_ip=request.environ.get("REMOTE_ADDR"),
+            user_agent=request.headers.get("User-Agent")
+        )
+        
+        # Proxy the request through the secure citation proxy
+        auth_config = {
+            "type": strategy.config.authentication.type,
+            "token_env_var": strategy.config.authentication.token_env_var,
+            "additional_headers": strategy.config.authentication.additional_headers or {}
+        }
+        
+        response = await citation_proxy.proxy_citation_request(access_request, auth_config)
+        
+        if response.success:
+            if response.redirect_url:
+                return jsonify({"redirect": response.redirect_url}), 302
+            elif response.content:
+                # Create a file-like object from the content
+                content_file = io.BytesIO(response.content)
+                content_file.seek(0)
+                return await send_file(
+                    content_file,
+                    mimetype=response.content_type or "application/octet-stream",
+                    as_attachment=False,
+                    attachment_filename=path
+                )
+            else:
+                return jsonify({"error": "No content received"}), 500
+        else:
+            current_app.logger.error(f"Secure citation access failed: {response.error_message}")
+            return jsonify({"error": response.error_message}), response.status_code
+    
+    except Exception as e:
+        current_app.logger.exception(f"Error in secure citation endpoint: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@bp.route("/citation/token", methods=["POST"])
+@authenticated
+async def generate_citation_token(auth_claims: dict[str, Any]):
+    """
+    Generate a secure token for accessing a protected citation.
+    """
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 415
+        
+        request_json = await request.get_json()
+        citation_url = request_json.get("citation_url")
+        expires_in = request_json.get("expires_in", 3600)  # Default 1 hour
+        
+        if not citation_url:
+            return jsonify({"error": "citation_url is required"}), 400
+        
+        # Get security system
+        security_validator, _, _ = get_citation_security_system()
+        
+        # Get user information
+        user_id = auth_claims.get("oid", auth_claims.get("sub", "unknown"))
+        
+        # Generate token
+        token = security_validator.generate_citation_token(citation_url, user_id, expires_in)
+        
+        return jsonify({
+            "token": token,
+            "expires_in": expires_in,
+            "citation_url": citation_url
+        })
+    
+    except Exception as e:
+        current_app.logger.exception(f"Error generating citation token: {e}")
+        return jsonify({"error": "Failed to generate citation token"}), 500
+
+
+@bp.route("/citation/csrf", methods=["GET"])
+@authenticated
+async def generate_csrf_token(auth_claims: dict[str, Any]):
+    """
+    Generate a CSRF token for the current session.
+    """
+    try:
+        # Get security system
+        security_validator, _, _ = get_citation_security_system()
+        
+        # Get or generate session ID
+        session_id = request.headers.get("X-Session-ID", create_session_id())
+        
+        # Generate CSRF token
+        csrf_token = security_validator.generate_csrf_token(session_id)
+        
+        return jsonify({
+            "csrf_token": csrf_token,
+            "session_id": session_id
+        })
+    
+    except Exception as e:
+        current_app.logger.exception(f"Error generating CSRF token: {e}")
+        return jsonify({"error": "Failed to generate CSRF token"}), 500
 
 
 @bp.route("/ask", methods=["POST"])
@@ -313,6 +473,8 @@ def config():
             "showChatHistoryBrowser": current_app.config[CONFIG_CHAT_HISTORY_BROWSER_ENABLED],
             "showChatHistoryCosmos": current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED],
             "showAgenticRetrievalOption": current_app.config[CONFIG_AGENTIC_RETRIEVAL_ENABLED],
+            "citationBaseUrl": current_app.config[CONFIG_CITATION_BASE_URL],
+            "citationStrategies": current_app.config.get(CONFIG_CITATION_STRATEGIES),
         }
     )
 
@@ -492,6 +654,9 @@ async def setup_clients():
 
     # WEBSITE_HOSTNAME is always set by App Service, RUNNING_IN_PRODUCTION is set in main.bicep
     RUNNING_ON_AZURE = os.getenv("WEBSITE_HOSTNAME") is not None or os.getenv("RUNNING_IN_PRODUCTION") is not None
+
+    # Citation base URL configuration - defaults to empty string (uses current backend)
+    CITATION_BASE_URL = os.getenv("CITATION_BASE_URL", "")
 
     # Use the current user identity for keyless authentication to Azure services.
     # This assumes you use 'azd auth login' locally, and managed identity when deployed on Azure.
@@ -683,6 +848,16 @@ async def setup_clients():
     current_app.config[CONFIG_CHAT_HISTORY_BROWSER_ENABLED] = USE_CHAT_HISTORY_BROWSER
     current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED] = USE_CHAT_HISTORY_COSMOS
     current_app.config[CONFIG_AGENTIC_RETRIEVAL_ENABLED] = USE_AGENTIC_RETRIEVAL
+    current_app.config[CONFIG_CITATION_BASE_URL] = CITATION_BASE_URL
+
+    # Load citation strategies configuration
+    try:
+        citation_strategies_config = load_citation_strategies_config()
+        current_app.config[CONFIG_CITATION_STRATEGIES] = citation_strategies_config
+        current_app.logger.info("Loaded citation strategies configuration")
+    except Exception as e:
+        current_app.logger.warning(f"Failed to load citation strategies configuration: {e}")
+        current_app.config[CONFIG_CITATION_STRATEGIES] = None
 
     prompt_manager = PromptyManager()
 

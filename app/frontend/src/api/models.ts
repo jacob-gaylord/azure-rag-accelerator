@@ -16,6 +16,42 @@ export const enum VectorFields {
     TextAndImageEmbeddings = "textAndImageEmbeddings"
 }
 
+// Advanced citation strategy types
+export type CitationAuthenticationInfo = {
+    type: string;
+    requiresAuth: boolean;
+    additionalHeaders?: Record<string, string>;
+};
+
+export type CitationStrategyInfo = {
+    name: string;
+    type: string;
+    baseUrl: string;
+    description?: string;
+    enabled: boolean;
+    priority: number;
+    fileExtensions?: string[];
+    pathPatterns?: string[];
+    authentication?: CitationAuthenticationInfo;
+};
+
+export type CitationStrategiesConfig = {
+    version: string;
+    defaultStrategy?: string;
+    fallbackStrategy?: string;
+    legacyBaseUrl?: string;
+    strategies: CitationStrategyInfo[];
+};
+
+export type CitationResult = {
+    url: string;
+    strategyUsed: string;
+    requiresAuth: boolean;
+    authHeaders?: Record<string, string>;
+    metadata?: Record<string, any>;
+    error?: string;
+};
+
 export type ChatAppRequestOverrides = {
     retrieval_mode?: RetrievalMode;
     semantic_ranker?: boolean;
@@ -102,6 +138,8 @@ export type Config = {
     showChatHistoryBrowser: boolean;
     showChatHistoryCosmos: boolean;
     showAgenticRetrievalOption: boolean;
+    citationBaseUrl?: string;
+    citationStrategies?: CitationStrategiesConfig;
 };
 
 export type SimpleAPIResponse = {
