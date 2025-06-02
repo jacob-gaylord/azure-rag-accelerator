@@ -316,6 +316,32 @@
     },
     "deployRedisCache": {
       "value": false
+    },
+    
+    "cosmosDbAdditionalRegions": {
+      "value": []
+    },
+    
+    "allowedInboundPorts": {
+      "value": ["80", "443"]
+    },
+    "allowedOutboundPorts": {
+      "value": ["80", "443", "53"]
+    },
+    "allowedSourceAddressPrefixes": {
+      "value": ["*"]
+    },
+    "allowedDestinationAddressPrefixes": {
+      "value": ["*"]
+    },
+    "serviceEndpoints": {
+      "value": ["Microsoft.Storage", "Microsoft.KeyVault", "Microsoft.AzureCosmosDB"]
+    },
+    "customDnsServers": {
+      "value": []
+    },
+    "customPrivateDnsZones": {
+      "value": []
     }
   }
 } 
