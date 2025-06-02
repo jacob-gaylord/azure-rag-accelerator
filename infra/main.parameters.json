@@ -351,7 +351,7 @@
       "value": "${AZURE_COSMOSDB_ENABLE_MULTIPLE_WRITE_LOCATIONS=false}"
     },
     "cosmosDbAdditionalRegions": {
-      "value": "${AZURE_COSMOSDB_ADDITIONAL_REGIONS=[]}"
+      "value": []
     },
     "cosmosDbEnableAutoscale": {
       "value": "${AZURE_COSMOSDB_ENABLE_AUTOSCALE=false}"
@@ -423,16 +423,16 @@
       "value": "${AZURE_ENABLE_CUSTOM_NSG_RULES=false}"
     },
     "allowedInboundPorts": {
-      "value": "${AZURE_ALLOWED_INBOUND_PORTS=[\"80\",\"443\"]}"
+      "value": ["80", "443"]
     },
     "allowedOutboundPorts": {
-      "value": "${AZURE_ALLOWED_OUTBOUND_PORTS=[\"80\",\"443\",\"53\"]}"
+      "value": ["80", "443", "53"]
     },
     "allowedSourceAddressPrefixes": {
-      "value": "${AZURE_ALLOWED_SOURCE_ADDRESS_PREFIXES=[\"*\"]}"
+      "value": ["*"]
     },
     "allowedDestinationAddressPrefixes": {
-      "value": "${AZURE_ALLOWED_DESTINATION_ADDRESS_PREFIXES=[\"*\"]}"
+      "value": ["*"]
     },
     "nsgRulePriorityStart": {
       "value": "${AZURE_NSG_RULE_PRIORITY_START=1000}"
@@ -441,7 +441,7 @@
       "value": "${AZURE_ENABLE_SERVICE_ENDPOINTS=false}"
     },
     "serviceEndpoints": {
-      "value": "${AZURE_SERVICE_ENDPOINTS=[\"Microsoft.Storage\",\"Microsoft.KeyVault\",\"Microsoft.AzureCosmosDB\"]}"
+      "value": ["Microsoft.Storage", "Microsoft.KeyVault", "Microsoft.AzureCosmosDB"]
     },
     "enableVnetPeering": {
       "value": "${AZURE_ENABLE_VNET_PEERING=false}"
@@ -465,13 +465,13 @@
       "value": "${AZURE_DDOS_PROTECTION_PLAN_ID=}"
     },
     "customDnsServers": {
-      "value": "${AZURE_CUSTOM_DNS_SERVERS=[]}"
+      "value": []
     },
     "enablePrivateDnsAutoRegistration": {
       "value": "${AZURE_ENABLE_PRIVATE_DNS_AUTO_REGISTRATION=true}"
     },
     "customPrivateDnsZones": {
-      "value": "${AZURE_CUSTOM_PRIVATE_DNS_ZONES=[]}"
+      "value": []
     },
     "speechServiceVoice": {
       "value": "${AZURE_SPEECH_SERVICE_VOICE}"

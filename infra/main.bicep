@@ -1671,6 +1671,7 @@ module documentIntelligenceRoleBackend 'core/security/role.bicep' = if (deployDo
 }
 
 // Enhanced Observability with Alerts
+/*
 module observabilityAlerts 'observability-alerts.bicep' = if (useApplicationInsights && observabilityAlertsEnabled && deployMonitoring) {
   name: 'observability-alerts'
   params: {
@@ -1679,8 +1680,10 @@ module observabilityAlerts 'observability-alerts.bicep' = if (useApplicationInsi
     environment: environmentName
   }
 }
+*/
 
 // RAG-Specific Dashboard  
+/*
 module ragDashboard 'rag-dashboard.bicep' = if (useApplicationInsights && observabilityDashboardEnabled && deployMonitoring) {
   name: 'rag-dashboard'
   params: {
@@ -1688,6 +1691,7 @@ module ragDashboard 'rag-dashboard.bicep' = if (useApplicationInsights && observ
     dashboardName: '${resourceToken}-rag-dashboard'
   }
 }
+*/
 
 // =============================================================================
 // ESSENTIAL OUTPUTS - Core values needed by deployment scripts and CI/CD
@@ -1978,5 +1982,5 @@ output ENVIRONMENT_SUMMARY object = {
 
 output OBSERVABILITY_ALERTS_ENABLED bool = observabilityAlertsEnabled
 output OBSERVABILITY_DASHBOARD_ENABLED bool = observabilityDashboardEnabled
-output ALERT_ACTION_GROUP_ID string = observabilityAlertsEnabled && useApplicationInsights ? observabilityAlerts.outputs.actionGroupId : ''
-output RAG_DASHBOARD_ID string = observabilityDashboardEnabled && useApplicationInsights ? ragDashboard.outputs.dashboardId : ''
+// output ALERT_ACTION_GROUP_ID string = observabilityAlertsEnabled && useApplicationInsights ? observabilityAlerts.outputs.actionGroupId : ''
+// output RAG_DASHBOARD_ID string = observabilityDashboardEnabled && useApplicationInsights ? ragDashboard.outputs.dashboardId : ''
