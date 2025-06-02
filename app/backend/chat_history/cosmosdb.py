@@ -1,10 +1,12 @@
 import os
 import time
+from datetime import timedelta
 from typing import Any, Union
 
 from azure.cosmos.aio import ContainerProxy, CosmosClient
 from azure.identity.aio import AzureDeveloperCliCredential, ManagedIdentityCredential
 from quart import Blueprint, current_app, jsonify, make_response, request
+from quart_rate_limiter import rate_limit
 
 from config import (
     CONFIG_CHAT_HISTORY_COSMOS_ENABLED,
@@ -204,6 +206,7 @@ async def delete_chat_history_session(auth_claims: dict[str, Any], session_id: s
 
 
 @chat_history_cosmosdb_bp.post("/feedback")
+@rate_limit(10, timedelta(minutes=1))  # 10 feedback submissions per minute per user
 @authenticated
 async def add_feedback(auth_claims: dict[str, Any]):
     """Add user feedback for a specific chat message."""
@@ -355,6 +358,7 @@ async def get_feedback_by_session_id(auth_claims: dict[str, Any], session_id: st
 
 
 @chat_history_cosmosdb_bp.put("/feedback/<feedback_id>")
+@rate_limit(5, timedelta(minutes=1))  # 5 feedback updates per minute per user
 @authenticated
 async def update_feedback(auth_claims: dict[str, Any], feedback_id: str):
     """Update existing feedback."""
