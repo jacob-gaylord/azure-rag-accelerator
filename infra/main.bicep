@@ -537,6 +537,11 @@ param deployUserStorage bool = true
 @description('Deploy Azure Redis Cache (when implemented)')
 param deployRedisCache bool = false
 
+// Add observability parameters after existing parameters
+param observabilityAlertsEnabled bool = true
+param alertEmailAddress string = ''
+param observabilityDashboardEnabled bool = true
+
 var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
@@ -1665,6 +1670,25 @@ module documentIntelligenceRoleBackend 'core/security/role.bicep' = if (deployDo
   }
 }
 
+// Enhanced Observability with Alerts
+module observabilityAlerts 'observability-alerts.bicep' = if (useApplicationInsights && observabilityAlertsEnabled && deployMonitoring) {
+  name: 'observability-alerts'
+  params: {
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    alertEmailAddress: alertEmailAddress
+    environment: environmentName
+  }
+}
+
+// RAG-Specific Dashboard  
+module ragDashboard 'rag-dashboard.bicep' = if (useApplicationInsights && observabilityDashboardEnabled && deployMonitoring) {
+  name: 'rag-dashboard'
+  params: {
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    dashboardName: '${resourceToken}-rag-dashboard'
+  }
+}
+
 // =============================================================================
 // ESSENTIAL OUTPUTS - Core values needed by deployment scripts and CI/CD
 // =============================================================================
@@ -1951,3 +1975,8 @@ output ENVIRONMENT_SUMMARY object = {
     citationBaseUrl: !empty(citationBaseUrl)
   }
 }
+
+output OBSERVABILITY_ALERTS_ENABLED bool = observabilityAlertsEnabled
+output OBSERVABILITY_DASHBOARD_ENABLED bool = observabilityDashboardEnabled
+output ALERT_ACTION_GROUP_ID string = observabilityAlertsEnabled && useApplicationInsights ? observabilityAlerts.outputs.actionGroupId : ''
+output RAG_DASHBOARD_ID string = observabilityDashboardEnabled && useApplicationInsights ? ragDashboard.outputs.dashboardId : ''

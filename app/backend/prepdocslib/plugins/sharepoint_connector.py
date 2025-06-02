@@ -15,9 +15,8 @@ from urllib.parse import urlparse, unquote
 
 from azure.core.credentials_async import AsyncTokenCredential
 from azure.identity.aio import ClientSecretCredential, DefaultAzureCredential
-from msgraph_core import GraphRequestAdapter
+from msgraph_core import BaseGraphRequestAdapter
 from msgraph_core.authentication import AzureIdentityAuthenticationProvider
-from msgraph_core.graph_request_adapter import GraphRequestAdapter
 from msgraph_core.authentication.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
 from msgraph import GraphServiceClient
 
@@ -134,7 +133,7 @@ class SharePointConnector(DataSourceConnector):
             )
             
             # Create request adapter
-            request_adapter = GraphRequestAdapter(auth_provider)
+            request_adapter = BaseGraphRequestAdapter(auth_provider)
             
             # Create Graph client
             self.client = GraphServiceClient(request_adapter)

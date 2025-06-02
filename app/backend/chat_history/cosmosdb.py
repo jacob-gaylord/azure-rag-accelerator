@@ -19,6 +19,7 @@ from config import (
 )
 from decorators import authenticated
 from error import error_response
+from observability import RAGTelemetry
 
 chat_history_cosmosdb_bp = Blueprint("chat_history_cosmos", __name__, static_folder="static")
 
@@ -312,6 +313,15 @@ async def add_feedback(auth_claims: dict[str, Any]):
 
         # Use partition key [userId, sessionId] for the feedback container
         await feedback_container.upsert_item(feedback_item, partition_key=[entra_oid, session_id])
+        
+        # Track feedback submission for observability
+        RAGTelemetry.track_feedback_submission(
+            rating=rating,
+            has_comment=bool(comment),
+            user_id=entra_oid,
+            session_id=session_id,
+            message_id=message_id
+        )
         
         return jsonify({"id": feedback_id, "message": "Feedback saved successfully"}), 201
     except Exception as error:
