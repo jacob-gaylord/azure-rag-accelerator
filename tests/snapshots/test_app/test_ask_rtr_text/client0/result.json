@@ -49,16 +49,12 @@
             {
                 "description": [
                     {
-                        "content": "You are an intelligent assistant helping Contoso Inc employees with their healthcare plan questions and employee handbook questions.\nUse 'you' to refer to the individual asking the questions even if they ask with 'I'.\nAnswer the following question using only the data provided in the sources below.\nEach source has a name followed by colon and the actual information, always include the source name for each fact you use in the response.\nIf you cannot answer using the sources below, say you don't know. Use below example to answer",
+                        "content": "You are an intelligent assistant helping users find information from organizational documents and knowledge bases.\nUse 'you' to refer to the individual asking the questions even if they ask with 'I'.\nAnswer the following question using only the data provided in the sources below.\nEach source has a name followed by colon and the actual information, always include the source name for each fact you use in the response.\nIf you cannot answer using the sources below, say you don't know. Use below example to answer",
                         "role": "system"
                     },
                     {
-                        "content": "What is the deductible for the employee plan for a visit to Overlake in Bellevue?\n\nSources:\ninfo1.txt: deductibles depend on whether you are in-network or out-of-network. In-network deductibles are $500 for employee and $1000 for family. Out-of-network deductibles are $1000 for employee and $2000 for family.\ninfo2.pdf: Overlake is in-network for the employee plan.\ninfo3.pdf: Overlake is the name of the area that includes a park and ride near Bellevue.\ninfo4.pdf: In-network institutions include Overlake, Swedish and others in the region.",
+                        "content": "What are the requirements for accessing the research database?\n\nSources:\naccess_policy.txt: Database access requires completion of security training and approval from the data steward. Users must have a business justification and sign a data use agreement.\nsecurity_guide.pdf: Research database access is restricted to authorized personnel only. Access levels are determined based on role and project requirements.\ntraining_requirements.pdf: All users must complete security awareness training before gaining database access.\ncompliance_standards.pdf: Database access must comply with data protection regulations and organizational security policies.\n\nA:\nDatabase access requires completion of security training and approval from the data steward [access_policy.txt][training_requirements.pdf]. Users must have a business justification and sign a data use agreement [access_policy.txt]. Research database access is restricted to authorized personnel only, with access levels determined based on role and project requirements [security_guide.pdf][compliance_standards.pdf].",
                         "role": "user"
-                    },
-                    {
-                        "content": "In-network deductibles are $500 for employee and $1000 for family [info1.txt] and Overlake is in-network for the employee plan [info2.pdf][info4.pdf].",
-                        "role": "assistant"
                     },
                     {
                         "content": "What is the capital of France?\nSources:\n\nBenefit_Options-2.pdf: There is a whistleblower policy.",
