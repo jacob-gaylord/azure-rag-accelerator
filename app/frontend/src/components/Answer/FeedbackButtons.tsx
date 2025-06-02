@@ -49,7 +49,11 @@ export const FeedbackButtons = ({ messageId, sessionId, isStreaming }: Props) =>
                 }
             }
         } catch (error) {
-            console.log("No existing feedback found or error loading feedback:", error);
+            // Only log errors that aren't expected (like 404 for no feedback)
+            if (error instanceof Error && !error.message.includes("Message not found")) {
+                console.error("Error loading existing feedback:", error);
+                // Don't show error to user for loading feedback - it's not critical
+            }
         }
     };
 
@@ -120,7 +124,12 @@ export const FeedbackButtons = ({ messageId, sessionId, isStreaming }: Props) =>
             // Reload feedback to get the latest data
             await loadExistingFeedback();
         } catch (error) {
-            setError(t("feedback.submitError"));
+            // Display the specific error message from the API
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError(t("feedback.submitError"));
+            }
             console.error("Error submitting feedback:", error);
         } finally {
             setIsSubmitting(false);

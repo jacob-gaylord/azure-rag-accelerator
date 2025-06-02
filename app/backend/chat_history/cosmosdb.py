@@ -319,6 +319,7 @@ async def add_feedback(auth_claims: dict[str, Any]):
 
 
 @chat_history_cosmosdb_bp.get("/feedback/message/<message_id>")
+@rate_limit(30, timedelta(minutes=1))  # 30 feedback queries per minute per user
 @authenticated
 async def get_feedback_by_message_id(auth_claims: dict[str, Any], message_id: str):
     """Get feedback for a specific message."""
@@ -393,6 +394,7 @@ async def get_feedback_by_message_id(auth_claims: dict[str, Any], message_id: st
 
 
 @chat_history_cosmosdb_bp.get("/feedback/session/<session_id>")
+@rate_limit(20, timedelta(minutes=1))  # 20 session feedback queries per minute per user
 @authenticated
 async def get_feedback_by_session_id(auth_claims: dict[str, Any], session_id: str):
     """Get all feedback for a specific session."""

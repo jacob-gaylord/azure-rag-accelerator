@@ -49,6 +49,7 @@ from quart import (
     send_from_directory,
 )
 from quart_cors import cors
+from quart_rate_limiter import RateLimiter
 
 from approaches.approach import Approach
 from approaches.chatreadretrieveread import ChatReadRetrieveReadApproach
@@ -804,6 +805,10 @@ async def close_clients():
 
 def create_app():
     app = Quart(__name__)
+    
+    # Configure rate limiter
+    rate_limiter = RateLimiter(app)
+    
     app.register_blueprint(bp)
     app.register_blueprint(chat_history_cosmosdb_bp)
 

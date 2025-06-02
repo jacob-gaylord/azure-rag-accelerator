@@ -202,48 +202,126 @@ export async function deleteChatHistoryApi(id: string, idToken: string): Promise
 }
 
 export async function submitFeedbackApi(request: FeedbackRequest, idToken: string): Promise<FeedbackResponse> {
-    const headers = await getHeaders(idToken);
-    const response = await fetch(`${BACKEND_URI}/feedback`, {
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(request)
-    });
+    try {
+        const headers = await getHeaders(idToken);
+        const response = await fetch(`${BACKEND_URI}/feedback`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify(request)
+        });
 
-    if (!response.ok) {
-        throw new Error(`Submitting feedback failed: ${response.statusText}`);
+        if (!response.ok) {
+            // Handle specific error cases
+            if (response.status === 429) {
+                throw new Error("Rate limit exceeded. Please wait a moment before submitting feedback again.");
+            } else if (response.status === 401) {
+                throw new Error("Authentication required. Please log in again.");
+            } else if (response.status === 400) {
+                // Try to get the specific error message from the response
+                try {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Invalid feedback data. Please check your input.");
+                } catch {
+                    throw new Error("Invalid feedback data. Please check your input.");
+                }
+            } else if (response.status === 404) {
+                throw new Error("Message not found. This feedback cannot be submitted.");
+            } else if (response.status >= 500) {
+                throw new Error("Server error. Please try again later.");
+            } else {
+                throw new Error(`Submitting feedback failed: ${response.statusText}`);
+            }
+        }
+
+        const dataResponse: FeedbackResponse = await response.json();
+        return dataResponse;
+    } catch (error) {
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+            throw new Error("Network error. Please check your connection and try again.");
+        }
+        // Re-throw other errors as-is
+        throw error;
     }
-
-    const dataResponse: FeedbackResponse = await response.json();
-    return dataResponse;
 }
 
 export async function getFeedbackByMessageApi(messageId: string, idToken: string): Promise<FeedbackApiResponse> {
-    const headers = await getHeaders(idToken);
-    const response = await fetch(`${BACKEND_URI}/feedback/message/${messageId}`, {
-        method: "GET",
-        headers: { ...headers, "Content-Type": "application/json" }
-    });
+    try {
+        const headers = await getHeaders(idToken);
+        const response = await fetch(`${BACKEND_URI}/feedback/message/${messageId}`, {
+            method: "GET",
+            headers: { ...headers, "Content-Type": "application/json" }
+        });
 
-    if (!response.ok) {
-        throw new Error(`Getting feedback failed: ${response.statusText}`);
+        if (!response.ok) {
+            // Handle specific error cases
+            if (response.status === 429) {
+                throw new Error("Rate limit exceeded. Please wait a moment before trying again.");
+            } else if (response.status === 401) {
+                throw new Error("Authentication required. Please log in again.");
+            } else if (response.status === 404) {
+                throw new Error("Message not found or no feedback available.");
+            } else if (response.status >= 500) {
+                throw new Error("Server error. Please try again later.");
+            } else {
+                throw new Error(`Getting feedback failed: ${response.statusText}`);
+            }
+        }
+
+        const dataResponse: FeedbackApiResponse = await response.json();
+        return dataResponse;
+    } catch (error) {
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+            throw new Error("Network error. Please check your connection and try again.");
+        }
+        // Re-throw other errors as-is
+        throw error;
     }
-
-    const dataResponse: FeedbackApiResponse = await response.json();
-    return dataResponse;
 }
 
 export async function updateFeedbackApi(feedbackId: string, request: Partial<FeedbackRequest>, idToken: string): Promise<{ message: string }> {
-    const headers = await getHeaders(idToken);
-    const response = await fetch(`${BACKEND_URI}/feedback/${feedbackId}`, {
-        method: "PUT",
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify(request)
-    });
+    try {
+        const headers = await getHeaders(idToken);
+        const response = await fetch(`${BACKEND_URI}/feedback/${feedbackId}`, {
+            method: "PUT",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify(request)
+        });
 
-    if (!response.ok) {
-        throw new Error(`Updating feedback failed: ${response.statusText}`);
+        if (!response.ok) {
+            // Handle specific error cases
+            if (response.status === 429) {
+                throw new Error("Rate limit exceeded. Please wait a moment before updating feedback again.");
+            } else if (response.status === 401) {
+                throw new Error("Authentication required. Please log in again.");
+            } else if (response.status === 400) {
+                // Try to get the specific error message from the response
+                try {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Invalid feedback data. Please check your input.");
+                } catch {
+                    throw new Error("Invalid feedback data. Please check your input.");
+                }
+            } else if (response.status === 403) {
+                throw new Error("You don't have permission to update this feedback.");
+            } else if (response.status === 404) {
+                throw new Error("Feedback not found. It may have been deleted.");
+            } else if (response.status >= 500) {
+                throw new Error("Server error. Please try again later.");
+            } else {
+                throw new Error(`Updating feedback failed: ${response.statusText}`);
+            }
+        }
+
+        const dataResponse: { message: string } = await response.json();
+        return dataResponse;
+    } catch (error) {
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+            throw new Error("Network error. Please check your connection and try again.");
+        }
+        // Re-throw other errors as-is
+        throw error;
     }
-
-    const dataResponse: { message: string } = await response.json();
-    return dataResponse;
 }
