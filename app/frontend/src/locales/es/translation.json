@@ -37,17 +37,17 @@
     "chatEmptyStateTitle": "Chatea con tus datos",
     "chatEmptyStateSubtitle": "Pregunta cualquier cosa o prueba un ejemplo",
     "defaultExamples": {
-        "1": "¿Qué está incluido en mi plan Northwind Health Plus que no está en el estándar?",
-        "2": "¿Qué sucede en una revisión de rendimiento?",
-        "3": "¿Qué hace un Gerente de producto?",
-        "placeholder": "Escribe una nueva pregunta (por ejemplo, ¿mi plan cubre exámenes anuales de la vista?)"
+        "1": "¿Cuáles son los requisitos clave para este proceso?",
+        "2": "¿Cómo empiezo con este flujo de trabajo?",
+        "3": "¿Cuáles son las mejores prácticas para esta tarea?",
+        "placeholder": "Escribe una nueva pregunta (por ejemplo, ¿qué capacitación necesito para este rol?)"
     },
     "askTitle": "Pregunta a tus datos",
     "gpt4vExamples": {
-        "1": "Compara el impacto de las tasas de interés y el PIB en los mercados financieros.",
-        "2": "¿Cuál es la tendencia esperada para el índice S&P 500 en los próximos cinco años? Compáralo con el rendimiento pasado del S&P 500",
-        "3": "¿Puedes identificar alguna correlación entre los precios del petróleo y las tendencias del mercado de valores?",
-        "placeholder": "Ejemplo: ¿Mi plan cubre exámenes anuales de la vista?"
+        "1": "Compara las tendencias mostradas en estos gráficos y diagramas.",
+        "2": "¿Qué patrones puedes identificar en estos datos visuales?",
+        "3": "¿Puedes analizar las relaciones entre estos puntos de datos?",
+        "placeholder": "Ejemplo: ¿Qué información puedes extraer de este documento?"
     },
     "generatingAnswer": "Generando respuesta",
     "citationWithColon": "Cita:",
