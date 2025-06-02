@@ -10,6 +10,7 @@ from config import (
     CONFIG_CHAT_HISTORY_COSMOS_ENABLED,
     CONFIG_COSMOS_HISTORY_CLIENT,
     CONFIG_COSMOS_HISTORY_CONTAINER,
+    CONFIG_COSMOS_FEEDBACK_CONTAINER,
     CONFIG_COSMOS_HISTORY_VERSION,
     CONFIG_CREDENTIAL,
 )
@@ -202,12 +203,226 @@ async def delete_chat_history_session(auth_claims: dict[str, Any], session_id: s
         return error_response(error, f"/chat_history/sessions/{session_id}")
 
 
+@chat_history_cosmosdb_bp.post("/feedback")
+@authenticated
+async def add_feedback(auth_claims: dict[str, Any]):
+    """Add user feedback for a specific chat message."""
+    if not current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED]:
+        return jsonify({"error": "Chat history not enabled"}), 400
+
+    feedback_container: ContainerProxy = current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER]
+    if not feedback_container:
+        return jsonify({"error": "User feedback not configured. Set AZURE_USER_FEEDBACK_CONTAINER environment variable."}), 400
+
+    entra_oid = auth_claims.get("oid")
+    if not entra_oid:
+        return jsonify({"error": "User OID not found"}), 401
+
+    try:
+        request_json = await request.get_json()
+        session_id = request_json.get("sessionId")
+        message_id = request_json.get("messageId")
+        rating = request_json.get("rating")
+        comment = request_json.get("comment", "")
+        
+        # Validate required fields
+        if not session_id or not message_id or rating is None:
+            return jsonify({"error": "sessionId, messageId, and rating are required"}), 400
+        
+        # Validate rating range
+        if not isinstance(rating, (int, float)) or rating < 1 or rating > 5:
+            return jsonify({"error": "Rating must be a number between 1 and 5"}), 400
+        
+        # Validate comment length
+        if comment and len(comment) > 1000:
+            return jsonify({"error": "Comment must be 1000 characters or less"}), 400
+        
+        # Validate messageId format
+        if not message_id.startswith(session_id):
+            return jsonify({"error": "Invalid messageId format"}), 400
+
+        timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
+        feedback_id = f"{message_id}-feedback"
+
+        feedback_item = {
+            "id": feedback_id,
+            "sessionId": session_id,
+            "messageId": message_id,
+            "userId": entra_oid,
+            "version": current_app.config[CONFIG_COSMOS_HISTORY_VERSION],
+            "type": "feedback",
+            "timestamp": timestamp,
+            "rating": rating,
+        }
+        
+        # Add comment if provided
+        if comment:
+            feedback_item["comment"] = comment
+
+        # Use partition key [userId, sessionId] for the feedback container
+        await feedback_container.upsert_item(feedback_item, partition_key=[entra_oid, session_id])
+        
+        return jsonify({"id": feedback_id, "message": "Feedback saved successfully"}), 201
+    except Exception as error:
+        return error_response(error, "/feedback")
+
+
+@chat_history_cosmosdb_bp.get("/feedback/message/<message_id>")
+@authenticated
+async def get_feedback_by_message_id(auth_claims: dict[str, Any], message_id: str):
+    """Get feedback for a specific message."""
+    if not current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED]:
+        return jsonify({"error": "Chat history not enabled"}), 400
+
+    feedback_container: ContainerProxy = current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER]
+    if not feedback_container:
+        return jsonify({"error": "User feedback not configured. Set AZURE_USER_FEEDBACK_CONTAINER environment variable."}), 400
+
+    entra_oid = auth_claims.get("oid")
+    if not entra_oid:
+        return jsonify({"error": "User OID not found"}), 401
+
+    try:
+        # Extract session_id from message_id (format: session_id-index)
+        session_id = message_id.rsplit('-', 1)[0]
+        
+        res = feedback_container.query_items(
+            query="SELECT * FROM c WHERE c.messageId = @message_id AND c.userId = @user_id",
+            parameters=[
+                dict(name="@message_id", value=message_id),
+                dict(name="@user_id", value=entra_oid)
+            ],
+            partition_key=[entra_oid, session_id],
+        )
+
+        feedback_items = []
+        async for page in res.by_page():
+            async for item in page:
+                feedback_items.append({
+                    "id": item["id"],
+                    "sessionId": item["sessionId"],
+                    "messageId": item["messageId"],
+                    "rating": item["rating"],
+                    "comment": item.get("comment", ""),
+                    "timestamp": item["timestamp"]
+                })
+
+        return jsonify({"feedback": feedback_items}), 200
+    except Exception as error:
+        return error_response(error, f"/feedback/message/{message_id}")
+
+
+@chat_history_cosmosdb_bp.get("/feedback/session/<session_id>")
+@authenticated
+async def get_feedback_by_session_id(auth_claims: dict[str, Any], session_id: str):
+    """Get all feedback for a specific session."""
+    if not current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED]:
+        return jsonify({"error": "Chat history not enabled"}), 400
+
+    feedback_container: ContainerProxy = current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER]
+    if not feedback_container:
+        return jsonify({"error": "User feedback not configured. Set AZURE_USER_FEEDBACK_CONTAINER environment variable."}), 400
+
+    entra_oid = auth_claims.get("oid")
+    if not entra_oid:
+        return jsonify({"error": "User OID not found"}), 401
+
+    try:
+        res = feedback_container.query_items(
+            query="SELECT * FROM c WHERE c.sessionId = @session_id AND c.userId = @user_id ORDER BY c.timestamp ASC",
+            parameters=[
+                dict(name="@session_id", value=session_id),
+                dict(name="@user_id", value=entra_oid)
+            ],
+            partition_key=[entra_oid, session_id],
+        )
+
+        feedback_items = []
+        async for page in res.by_page():
+            async for item in page:
+                feedback_items.append({
+                    "id": item["id"],
+                    "sessionId": item["sessionId"],
+                    "messageId": item["messageId"],
+                    "rating": item["rating"],
+                    "comment": item.get("comment", ""),
+                    "timestamp": item["timestamp"]
+                })
+
+        return jsonify({"feedback": feedback_items}), 200
+    except Exception as error:
+        return error_response(error, f"/feedback/session/{session_id}")
+
+
+@chat_history_cosmosdb_bp.put("/feedback/<feedback_id>")
+@authenticated
+async def update_feedback(auth_claims: dict[str, Any], feedback_id: str):
+    """Update existing feedback."""
+    if not current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED]:
+        return jsonify({"error": "Chat history not enabled"}), 400
+
+    feedback_container: ContainerProxy = current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER]
+    if not feedback_container:
+        return jsonify({"error": "User feedback not configured. Set AZURE_USER_FEEDBACK_CONTAINER environment variable."}), 400
+
+    entra_oid = auth_claims.get("oid")
+    if not entra_oid:
+        return jsonify({"error": "User OID not found"}), 401
+
+    try:
+        request_json = await request.get_json()
+        rating = request_json.get("rating")
+        comment = request_json.get("comment", "")
+        
+        # Validate rating if provided
+        if rating is not None and (not isinstance(rating, (int, float)) or rating < 1 or rating > 5):
+            return jsonify({"error": "Rating must be a number between 1 and 5"}), 400
+        
+        # Validate comment length
+        if comment and len(comment) > 1000:
+            return jsonify({"error": "Comment must be 1000 characters or less"}), 400
+
+        # Extract session_id from feedback_id (format: session_id-index-feedback)
+        message_id = feedback_id.replace('-feedback', '')
+        session_id = message_id.rsplit('-', 1)[0]
+        
+        # First, get the existing feedback item
+        try:
+            existing_item = await feedback_container.read_item(
+                item=feedback_id,
+                partition_key=[entra_oid, session_id]
+            )
+        except Exception:
+            return jsonify({"error": "Feedback not found"}), 404
+        
+        # Verify ownership
+        if existing_item.get("userId") != entra_oid:
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        # Update fields
+        if rating is not None:
+            existing_item["rating"] = rating
+        if comment is not None:
+            existing_item["comment"] = comment
+        
+        # Update timestamp
+        existing_item["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
+        
+        # Save updated item
+        await feedback_container.upsert_item(existing_item, partition_key=[entra_oid, session_id])
+        
+        return jsonify({"message": "Feedback updated successfully"}), 200
+    except Exception as error:
+        return error_response(error, f"/feedback/{feedback_id}")
+
+
 @chat_history_cosmosdb_bp.before_app_serving
 async def setup_clients():
     USE_CHAT_HISTORY_COSMOS = os.getenv("USE_CHAT_HISTORY_COSMOS", "").lower() == "true"
     AZURE_COSMOSDB_ACCOUNT = os.getenv("AZURE_COSMOSDB_ACCOUNT")
     AZURE_CHAT_HISTORY_DATABASE = os.getenv("AZURE_CHAT_HISTORY_DATABASE")
     AZURE_CHAT_HISTORY_CONTAINER = os.getenv("AZURE_CHAT_HISTORY_CONTAINER")
+    AZURE_USER_FEEDBACK_CONTAINER = os.getenv("AZURE_USER_FEEDBACK_CONTAINER")
 
     azure_credential: Union[AzureDeveloperCliCredential, ManagedIdentityCredential] = current_app.config[
         CONFIG_CREDENTIAL
@@ -221,15 +436,27 @@ async def setup_clients():
             raise ValueError("AZURE_CHAT_HISTORY_DATABASE must be set when USE_CHAT_HISTORY_COSMOS is true")
         if not AZURE_CHAT_HISTORY_CONTAINER:
             raise ValueError("AZURE_CHAT_HISTORY_CONTAINER must be set when USE_CHAT_HISTORY_COSMOS is true")
-        cosmos_client = CosmosClient(
-            url=f"https://{AZURE_COSMOSDB_ACCOUNT}.documents.azure.com:443/", credential=azure_credential
-        )
-        cosmos_db = cosmos_client.get_database_client(AZURE_CHAT_HISTORY_DATABASE)
-        cosmos_container = cosmos_db.get_container_client(AZURE_CHAT_HISTORY_CONTAINER)
 
+        cosmos_client = CosmosClient(f"https://{AZURE_COSMOSDB_ACCOUNT}.documents.azure.com:443/", azure_credential)
         current_app.config[CONFIG_COSMOS_HISTORY_CLIENT] = cosmos_client
-        current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER] = cosmos_container
+
+        cosmos_db = cosmos_client.get_database_client(AZURE_CHAT_HISTORY_DATABASE)
+        container = cosmos_db.get_container_client(AZURE_CHAT_HISTORY_CONTAINER)
+        current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER] = container
+
+        # Initialize UserFeedback container if configured (optional for backward compatibility)
+        if AZURE_USER_FEEDBACK_CONTAINER:
+            current_app.logger.info(f"Setting up UserFeedback container: {AZURE_USER_FEEDBACK_CONTAINER}")
+            feedback_container = cosmos_db.get_container_client(AZURE_USER_FEEDBACK_CONTAINER)
+            current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER] = feedback_container
+        else:
+            current_app.logger.info("AZURE_USER_FEEDBACK_CONTAINER not configured, feedback endpoints will be disabled")
+            current_app.config[CONFIG_COSMOS_FEEDBACK_CONTAINER] = None
+
         current_app.config[CONFIG_COSMOS_HISTORY_VERSION] = os.environ["AZURE_CHAT_HISTORY_VERSION"]
+
+    else:
+        current_app.config[CONFIG_CHAT_HISTORY_COSMOS_ENABLED] = False
 
 
 @chat_history_cosmosdb_bp.after_app_serving

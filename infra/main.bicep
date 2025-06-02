@@ -78,6 +78,8 @@ param cosmosDbAccountName string = ''
 param cosmosDbThroughput int = 400
 param chatHistoryDatabaseName string = 'chat-database'
 param chatHistoryContainerName string = 'chat-history-v2'
+@description('Name of the Cosmos DB container for storing user feedback')
+param userFeedbackContainerName string = 'UserFeedback'
 param chatHistoryVersion string = 'cosmosdb-v2'
 
 // https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=global-standard%2Cstandard-chat-completions#models-by-deployment-type
@@ -439,6 +441,7 @@ var appEnvVariables = {
   AZURE_COSMOSDB_ACCOUNT: (useAuthentication && useChatHistoryCosmos) ? cosmosDb.outputs.name : ''
   AZURE_CHAT_HISTORY_DATABASE: chatHistoryDatabaseName
   AZURE_CHAT_HISTORY_CONTAINER: chatHistoryContainerName
+  AZURE_USER_FEEDBACK_CONTAINER: userFeedbackContainerName
   AZURE_CHAT_HISTORY_VERSION: chatHistoryVersion
   // Shared by all OpenAI deployments
   OPENAI_HOST: openAiHost
@@ -928,6 +931,69 @@ module cosmosDb 'br/public:avm/res/document-db/database-account:0.6.1' = if (use
               ]
             }
           }
+          {
+            name: userFeedbackContainerName
+            kind: 'MultiHash'
+            paths: [
+              '/userId'
+              '/sessionId'
+            ]
+            indexingPolicy: {
+              indexingMode: 'consistent'
+              automatic: true
+              includedPaths: [
+                {
+                  path: '/userId/?'
+                }
+                {
+                  path: '/sessionId/?'
+                }
+                {
+                  path: '/messageId/?'
+                }
+                {
+                  path: '/timestamp/?'
+                }
+                {
+                  path: '/rating/?'
+                }
+                {
+                  path: '/type/?'
+                }
+              ]
+              excludedPaths: [
+                {
+                  path: '/*'
+                }
+              ]
+              compositeIndexes: [
+                [
+                  {
+                    path: '/sessionId'
+                    order: 'ascending'
+                  }
+                  {
+                    path: '/timestamp'
+                    order: 'ascending'
+                  }
+                ]
+                [
+                  {
+                    path: '/userId'
+                    order: 'ascending'
+                  }
+                  {
+                    path: '/rating'
+                    order: 'ascending'
+                  }
+                  {
+                    path: '/timestamp'
+                    order: 'descending'
+                  }
+                ]
+              ]
+            }
+          }
         ]
       }
     ]
@@ -1346,6 +1412,7 @@ output AZURE_SEARCH_FIELD_NAME_EMBEDDING string = searchFieldNameEmbedding
 output AZURE_COSMOSDB_ACCOUNT string = (useAuthentication && useChatHistoryCosmos) ? cosmosDb.outputs.name : ''
 output AZURE_CHAT_HISTORY_DATABASE string = chatHistoryDatabaseName
 output AZURE_CHAT_HISTORY_CONTAINER string = chatHistoryContainerName
+output AZURE_USER_FEEDBACK_CONTAINER string = userFeedbackContainerName
 output AZURE_CHAT_HISTORY_VERSION string = chatHistoryVersion
 
 output AZURE_STORAGE_ACCOUNT string = storage.outputs.name
