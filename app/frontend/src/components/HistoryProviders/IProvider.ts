@@ -3,6 +3,14 @@ import { ChatAppResponse } from "../../api";
 export type HistoryMetaData = { id: string; title: string; timestamp: number };
 export type Answers = [user: string, response: ChatAppResponse][];
 
+// New structured format with messageId
+export type StructuredMessage = {
+    messageId: string;
+    question: string;
+    response: string;
+};
+export type StructuredMessages = StructuredMessage[];
+
 export const enum HistoryProviderOptions {
     None = "none",
     IndexedDB = "indexedDB",

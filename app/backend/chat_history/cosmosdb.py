@@ -1,5 +1,6 @@
 import os
 import time
+import uuid  # Add UUID import for message ID generation
 from datetime import timedelta
 from typing import Any, Union
 
@@ -20,6 +21,16 @@ from decorators import authenticated
 from error import error_response
 
 chat_history_cosmosdb_bp = Blueprint("chat_history_cosmos", __name__, static_folder="static")
+
+
+def generate_message_id() -> str:
+    """
+    Generate a UUID4-based message ID.
+    
+    Returns:
+        str: A 36-character UUID4 string in standard format (e.g., '123e4567-e89b-12d3-a456-426614174000')
+    """
+    return str(uuid.uuid4())
 
 
 @chat_history_cosmosdb_bp.post("/chat_history")
@@ -58,9 +69,11 @@ async def post_chat_history(auth_claims: dict[str, Any]):
         message_pair_items = []
         # Now insert a message item for each question/response pair:
         for ind, message_pair in enumerate(message_pairs):
+            message_id = generate_message_id()  # Generate UUID4 message ID
             message_pair_items.append(
                 {
-                    "id": f"{session_id}-{ind}",
+                    "id": message_id,
+                    "messageId": message_id,  # Add explicit messageId field
                     "version": current_app.config[CONFIG_COSMOS_HISTORY_VERSION],
                     "session_id": session_id,
                     "entra_oid": entra_oid,
@@ -156,14 +169,20 @@ async def get_chat_history_session(auth_claims: dict[str, Any], session_id: str)
         message_pairs = []
         async for page in res.by_page():
             async for item in page:
-                message_pairs.append([item["question"], item["response"]])
+                # Include messageId in the response for frontend feedback integration
+                message_pair = {
+                    "messageId": item.get("messageId", item["id"]),  # Use messageId field or fallback to id
+                    "question": item["question"],
+                    "response": item["response"]
+                }
+                message_pairs.append(message_pair)
 
         return (
             jsonify(
                 {
                     "id": session_id,
                     "entra_oid": entra_oid,
-                    "answers": message_pairs,
+                    "messages": message_pairs,  # Changed from "answers" to "messages" to reflect new structure
                 }
             ),
             200,
@@ -240,9 +259,38 @@ async def add_feedback(auth_claims: dict[str, Any]):
         if comment and len(comment) > 1000:
             return jsonify({"error": "Comment must be 1000 characters or less"}), 400
         
-        # Validate messageId format
-        if not message_id.startswith(session_id):
-            return jsonify({"error": "Invalid messageId format"}), 400
+        # Validate messageId format - Since we're using UUID4, remove the session_id prefix check
+        # Instead, we'll validate that the message exists and belongs to the user
+        
+        # Verify that the message exists and belongs to the user
+        history_container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        if history_container:
+            try:
+                # Query to verify message exists and belongs to user/session
+                message_query_res = history_container.query_items(
+                    query="SELECT c.session_id FROM c WHERE c.messageId = @message_id AND c.entra_oid = @entra_oid AND c.type = @type",
+                    parameters=[
+                        dict(name="@message_id", value=message_id),
+                        dict(name="@entra_oid", value=entra_oid),
+                        dict(name="@type", value="message_pair")
+                    ],
+                    partition_key=[entra_oid],
+                )
+                
+                message_found = False
+                async for page in message_query_res.by_page():
+                    async for item in page:
+                        if item.get("session_id") == session_id:
+                            message_found = True
+                            break
+                    if message_found:
+                        break
+                
+                if not message_found:
+                    return jsonify({"error": "Invalid messageId or session mismatch"}), 400
+                    
+            except Exception:
+                return jsonify({"error": "Unable to validate message"}), 400
 
         timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
         feedback_id = f"{message_id}-feedback"
@@ -286,8 +334,37 @@ async def get_feedback_by_message_id(auth_claims: dict[str, Any], message_id: st
         return jsonify({"error": "User OID not found"}), 401
 
     try:
-        # Extract session_id from message_id (format: session_id-index)
-        session_id = message_id.rsplit('-', 1)[0]
+        # Get session_id by querying the message instead of parsing the message_id
+        history_container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        session_id = None
+        
+        if history_container:
+            try:
+                # Query to get session_id for the message
+                message_query_res = history_container.query_items(
+                    query="SELECT c.session_id FROM c WHERE c.messageId = @message_id AND c.entra_oid = @entra_oid AND c.type = @type",
+                    parameters=[
+                        dict(name="@message_id", value=message_id),
+                        dict(name="@entra_oid", value=entra_oid),
+                        dict(name="@type", value="message_pair")
+                    ],
+                    partition_key=[entra_oid],
+                )
+                
+                async for page in message_query_res.by_page():
+                    async for item in page:
+                        session_id = item.get("session_id")
+                        break
+                    if session_id:
+                        break
+                        
+                if not session_id:
+                    return jsonify({"error": "Message not found"}), 404
+                    
+            except Exception:
+                return jsonify({"error": "Unable to lookup message"}), 400
+        else:
+            return jsonify({"error": "Chat history not configured"}), 400
         
         res = feedback_container.query_items(
             query="SELECT * FROM c WHERE c.messageId = @message_id AND c.userId = @user_id",
@@ -386,9 +463,39 @@ async def update_feedback(auth_claims: dict[str, Any], feedback_id: str):
         if comment and len(comment) > 1000:
             return jsonify({"error": "Comment must be 1000 characters or less"}), 400
 
-        # Extract session_id from feedback_id (format: session_id-index-feedback)
+        # Get message_id and session_id from feedback_id instead of string parsing
         message_id = feedback_id.replace('-feedback', '')
-        session_id = message_id.rsplit('-', 1)[0]
+        
+        # Query to get session_id for the message
+        history_container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        session_id = None
+        
+        if history_container:
+            try:
+                message_query_res = history_container.query_items(
+                    query="SELECT c.session_id FROM c WHERE c.messageId = @message_id AND c.entra_oid = @entra_oid AND c.type = @type",
+                    parameters=[
+                        dict(name="@message_id", value=message_id),
+                        dict(name="@entra_oid", value=entra_oid),
+                        dict(name="@type", value="message_pair")
+                    ],
+                    partition_key=[entra_oid],
+                )
+                
+                async for page in message_query_res.by_page():
+                    async for item in page:
+                        session_id = item.get("session_id")
+                        break
+                    if session_id:
+                        break
+                        
+                if not session_id:
+                    return jsonify({"error": "Message not found"}), 404
+                    
+            except Exception:
+                return jsonify({"error": "Unable to lookup message"}), 400
+        else:
+            return jsonify({"error": "Chat history not configured"}), 400
         
         # First, get the existing feedback item
         try:

@@ -10,10 +10,11 @@ for_sessions_query = [
     [
         {
             "id": "123",
+            "version": "cosmosdb-v2",
             "session_id": "123",
             "entra_oid": "OID_X",
-            "title": "This is a test message",
-            "timestamp": 123456789,
+            "title": "What does a Product Manager do?",
+            "timestamp": 1712848449013,
             "type": "session",
         }
     ]
@@ -53,7 +54,8 @@ for_deletion_query = [
 for_message_pairs_query = [
     [
         {
-            "id": "123-0",
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "messageId": "550e8400-e29b-41d4-a716-446655440000",
             "version": "cosmosdb-v2",
             "session_id": "123",
             "entra_oid": "OID_X",
@@ -113,7 +115,10 @@ async def test_chathistory_newitem(auth_public_documents_client, monkeypatch):
         assert session["entra_oid"] == "OID_X"
         assert session["title"] == "This is a test message"
         message = operations[1][1][0]
-        assert message["id"] == "123-0"
+        assert len(message["id"]) == 36
+        assert message["id"].count("-") == 4
+        assert "messageId" in message
+        assert message["messageId"] == message["id"]
         assert message["session_id"] == "123"
         assert message["entra_oid"] == "OID_X"
         assert message["question"] == "This is a test message"

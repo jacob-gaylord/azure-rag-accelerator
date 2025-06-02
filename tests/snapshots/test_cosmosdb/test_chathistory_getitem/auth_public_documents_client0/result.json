@@ -1,8 +1,11 @@
 {
-    "answers": [
-        [
-            "What does a Product Manager do?",
-            {
+    "entra_oid": "OID_X",
+    "id": "123",
+    "messages": [
+        {
+            "messageId": "550e8400-e29b-41d4-a716-446655440000",
+            "question": "What does a Product Manager do?",
+            "response": {
                 "delta": {
                     "role": "assistant"
                 },
@@ -12,8 +15,6 @@
                 },
                 "session_state": "143c0240-b2ee-4090-8e90-2a1c58124894"
             }
-        ]
-    ],
-    "entra_oid": "OID_X",
-    "id": "123"
+        }
+    ]
 }

@@ -1,5 +1,6 @@
 import { IHistoryProvider, Answers, HistoryProviderOptions, HistoryMetaData } from "./IProvider";
 import { deleteChatHistoryApi, getChatHistoryApi, getChatHistoryListApi, postChatHistoryApi } from "../../api";
+import { ChatAppResponse } from "../../api";
 
 export class CosmosDBProvider implements IHistoryProvider {
     getProviderName = () => HistoryProviderOptions.CosmosDB;
@@ -41,7 +42,36 @@ export class CosmosDBProvider implements IHistoryProvider {
 
     async getItem(id: string, idToken?: string): Promise<Answers | null> {
         const response = await getChatHistoryApi(id, idToken || "");
-        return response.answers || null;
+        
+        // Handle new structured format with messages
+        if (response.messages && Array.isArray(response.messages)) {
+            // Convert structured messages to Answers format for backward compatibility
+            const answers: Answers = response.messages.map(msg => {
+                // Parse the response field if it's a string, otherwise assume it's already a ChatAppResponse
+                let chatResponse: ChatAppResponse;
+                if (typeof msg.response === 'string') {
+                    try {
+                        chatResponse = JSON.parse(msg.response);
+                    } catch (e) {
+                        // If parsing fails, create a basic ChatAppResponse structure
+                        chatResponse = {
+                            message: { content: msg.response, role: "assistant" },
+                            delta: { content: "", role: "assistant" },
+                            context: { data_points: [], followup_questions: null, thoughts: [] },
+                            session_state: null
+                        };
+                    }
+                } else {
+                    chatResponse = msg.response as ChatAppResponse;
+                }
+                
+                return [msg.question, chatResponse] as [string, ChatAppResponse];
+            });
+            return answers;
+        }
+        
+        // Return null if no messages found
+        return null;
     }
 
     async deleteItem(id: string, idToken?: string): Promise<void> {
