@@ -269,8 +269,21 @@ export const Settings = ({
                 onChange={(_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => onChange("includeCategory", option?.key || "")}
                 aria-labelledby={includeCategoryId}
                 options={[
-                    { key: "", text: t("labels.includeCategoryOptions.all") }
-                    // { key: "example", text: "Example Category" } // Add more categories as needed
+                    { key: "", text: t("labels.includeCategoryOptions.all") },
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+                    { key: "Solution Objects", text: t("labels.includeCategoryOptions.solutionObjects") },
+=======
+                    { key: "Solution Object", text: t("labels.includeCategoryOptions.solutionObjects") },
+>>>>>>> a9ace28 (feat: generic example questions & reliable local ingestion script)
+=======
+                    { key: "Solution Object", text: t("labels.includeCategoryOptions.solutionObjects") },
+>>>>>>> d630bf7 (feat: generic example questions & reliable local ingestion script)
+=======
+                    { key: "Solution Object", text: t("labels.includeCategoryOptions.solutionObjects") },
+>>>>>>> ce7b59d (feat: generic example questions & reliable local ingestion script)
+                    { key: "Employee Info", text: t("labels.includeCategoryOptions.employeeInfo") }
                 ]}
                 onRenderLabel={props => renderLabel(props, includeCategoryId, includeCategoryFieldId, t("helpTexts.includeCategory"))}
             />
