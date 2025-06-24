@@ -7,11 +7,20 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
 import styles from "./Answer.module.css";
-import { ChatAppResponse, getCitationFilePath, SpeechConfig } from "../../api";
+import { ChatAppResponse, getCitationFilePath, SpeechConfig, submitFeedbackApi, FeedbackRequest } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
 import { SpeechOutputBrowser } from "./SpeechOutputBrowser";
 import { SpeechOutputAzure } from "./SpeechOutputAzure";
+import { FeedbackModal } from "../FeedbackModal";
+import { getToken } from "../../authConfig";
+import { useMsal } from "@azure/msal-react";
+
+interface FeedbackState {
+    type: "positive" | "negative" | null;
+    comment?: string;
+    timestamp?: string;
+}
 
 interface Props {
     answer: ChatAppResponse;
@@ -26,6 +35,9 @@ interface Props {
     showFollowupQuestions?: boolean;
     showSpeechOutputBrowser?: boolean;
     showSpeechOutputAzure?: boolean;
+    conversationId?: string;
+    messageId?: string;
+    onFeedbackSubmit?: (messageIndex: number, type: "positive" | "negative" | "neutral", comment?: string) => void;
 }
 
 export const Answer = ({
@@ -40,13 +52,19 @@ export const Answer = ({
     onFollowupQuestionClicked,
     showFollowupQuestions,
     showSpeechOutputAzure,
-    showSpeechOutputBrowser
+    showSpeechOutputBrowser,
+    conversationId,
+    messageId,
+    onFeedbackSubmit
 }: Props) => {
     const followupQuestions = answer.context?.followup_questions;
     const parsedAnswer = useMemo(() => parseAnswerToHtml(answer, isStreaming, onCitationClicked), [answer]);
     const { t } = useTranslation();
     const sanitizedAnswerHtml = DOMPurify.sanitize(parsedAnswer.answerHtml);
     const [copied, setCopied] = useState(false);
+    const [feedback, setFeedback] = useState<FeedbackState>({ type: null });
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+    const { instance: client } = useMsal();
 
     const handleCopy = () => {
         // Single replace to remove all HTML tags to remove the citations
@@ -59,6 +77,56 @@ export const Answer = ({
                 setTimeout(() => setCopied(false), 2000);
             })
             .catch(err => console.error("Failed to copy text: ", err));
+    };
+
+    const handlePositiveFeedback = async () => {
+        try {
+            if (feedback.type === "positive") {
+                // Remove positive feedback
+                if (onFeedbackSubmit) {
+                    onFeedbackSubmit(index, "neutral", undefined);
+                }
+                setFeedback({ type: null });
+            } else {
+                // Set positive feedback
+                if (onFeedbackSubmit) {
+                    onFeedbackSubmit(index, "positive", undefined);
+                }
+                setFeedback({ type: "positive", timestamp: new Date().toISOString() });
+            }
+        } catch (error) {
+            console.error("Failed to submit positive feedback:", error);
+        }
+    };
+
+    const handleNegativeFeedback = () => {
+        if (feedback.type === "negative") {
+            // Remove negative feedback
+            try {
+                if (onFeedbackSubmit) {
+                    onFeedbackSubmit(index, "neutral", undefined);
+                }
+                setFeedback({ type: null });
+            } catch (error) {
+                console.error("Failed to remove negative feedback:", error);
+            }
+        } else {
+            // Set negative feedback - open modal
+            setShowFeedbackModal(true);
+        }
+    };
+
+    const handleFeedbackModalSubmit = async (comment: string) => {
+        try {
+            // Use callback for local state management instead of API call
+            if (onFeedbackSubmit) {
+                onFeedbackSubmit(index, "negative", comment);
+            }
+            setFeedback({ type: "negative", comment, timestamp: new Date().toISOString() });
+        } catch (error) {
+            console.error("Failed to submit negative feedback:", error);
+            throw error; // Re-throw to let the modal handle the error
+        }
     };
 
     return (
@@ -94,6 +162,46 @@ export const Answer = ({
                             <SpeechOutputAzure answer={sanitizedAnswerHtml} index={index} speechConfig={speechConfig} isStreaming={isStreaming} />
                         )}
                         {showSpeechOutputBrowser && <SpeechOutputBrowser answer={sanitizedAnswerHtml} />}
+                        {conversationId && messageId && !isStreaming && (
+                            <>
+                                <IconButton
+                                    style={{
+                                        color: feedback.type === "positive" ? "#107c10" : "black",
+                                        backgroundColor: feedback.type === "positive" ? "#f3f2f1" : "transparent"
+                                    }}
+                                    iconProps={{ iconName: "Like" }}
+                                    title={
+                                        feedback.type === "positive"
+                                            ? t("feedback.changeToNeutral", "Remove helpful feedback")
+                                            : t("feedback.thumbsUp", "This response was helpful")
+                                    }
+                                    ariaLabel={
+                                        feedback.type === "positive"
+                                            ? t("feedback.changeToNeutral", "Remove helpful feedback")
+                                            : t("feedback.thumbsUp", "This response was helpful")
+                                    }
+                                    onClick={handlePositiveFeedback}
+                                />
+                                <IconButton
+                                    style={{
+                                        color: feedback.type === "negative" ? "#d13438" : "black",
+                                        backgroundColor: feedback.type === "negative" ? "#f3f2f1" : "transparent"
+                                    }}
+                                    iconProps={{ iconName: "Dislike" }}
+                                    title={
+                                        feedback.type === "negative"
+                                            ? t("feedback.changeToNeutral", "Remove unhelpful feedback")
+                                            : t("feedback.thumbsDown", "This response was not helpful")
+                                    }
+                                    ariaLabel={
+                                        feedback.type === "negative"
+                                            ? t("feedback.changeToNeutral", "Remove unhelpful feedback")
+                                            : t("feedback.thumbsDown", "This response was not helpful")
+                                    }
+                                    onClick={handleNegativeFeedback}
+                                />
+                            </>
+                        )}
                     </div>
                 </Stack>
             </Stack.Item>
@@ -134,6 +242,13 @@ export const Answer = ({
                     </Stack>
                 </Stack.Item>
             )}
+
+            <FeedbackModal
+                isOpen={showFeedbackModal}
+                onClose={() => setShowFeedbackModal(false)}
+                onSubmit={handleFeedbackModalSubmit}
+                messageId={messageId || ""}
+            />
         </Stack>
     );
 };
