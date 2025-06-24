@@ -272,7 +272,7 @@ const Chat = () => {
                 setAnswers([...answers, [question, parsedResponse]]);
                 if (typeof parsedResponse.session_state === "string" && parsedResponse.session_state !== "") {
                     const token = client ? await getToken(client) : undefined;
-                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse]], token);
+                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse]], token, feedbackMap);
                 }
             } else {
                 const parsedResponse: ChatAppResponseOrError = await response.json();
@@ -282,7 +282,7 @@ const Chat = () => {
                 setAnswers([...answers, [question, parsedResponse as ChatAppResponse]]);
                 if (typeof parsedResponse.session_state === "string" && parsedResponse.session_state !== "") {
                     const token = client ? await getToken(client) : undefined;
-                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse as ChatAppResponse]], token);
+                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse as ChatAppResponse]], token, feedbackMap);
                 }
             }
             setSpeechUrls([...speechUrls, null]);
