@@ -38,6 +38,7 @@ async def post_chat_history(auth_claims: dict[str, Any]):
         request_json = await request.get_json()
         session_id = request_json.get("id")
         message_pairs = request_json.get("answers")
+        feedback_data = request_json.get("feedback", {})  # Get feedback data if provided
         first_question = message_pairs[0][0]
         title = first_question + "..." if len(first_question) > 50 else first_question
         timestamp = int(time.time() * 1000)
@@ -56,17 +57,28 @@ async def post_chat_history(auth_claims: dict[str, Any]):
         message_pair_items = []
         # Now insert a message item for each question/response pair:
         for ind, message_pair in enumerate(message_pairs):
-            message_pair_items.append(
-                {
-                    "id": f"{session_id}-{ind}",
-                    "version": current_app.config[CONFIG_COSMOS_HISTORY_VERSION],
-                    "session_id": session_id,
-                    "entra_oid": entra_oid,
-                    "type": "message_pair",
-                    "question": message_pair[0],
-                    "response": message_pair[1],
+            message_item = {
+                "id": f"{session_id}-{ind}",
+                "version": current_app.config[CONFIG_COSMOS_HISTORY_VERSION],
+                "session_id": session_id,
+                "entra_oid": entra_oid,
+                "type": "message_pair",
+                "question": message_pair[0],
+                "response": message_pair[1],
+            }
+            
+            # Add feedback if it exists for this message
+            message_id = f"{session_id}-{ind}"
+            if message_id in feedback_data:
+                feedback = feedback_data[message_id]
+                message_item["feedback"] = {
+                    "type": feedback.get("type"),
+                    "comment": feedback.get("comment", ""),
+                    "timestamp": feedback.get("timestamp", datetime.utcnow().isoformat()),
+                    "user_oid": entra_oid
                 }
-            )
+            
+            message_pair_items.append(message_item)
 
         batch_operations = [("upsert", (session_item,))] + [
             ("upsert", (message_pair_item,)) for message_pair_item in message_pair_items
