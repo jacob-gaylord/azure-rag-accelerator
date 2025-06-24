@@ -4,6 +4,15 @@ import { Helmet } from "react-helmet-async";
 import { Panel, DefaultButton } from "@fluentui/react";
 import readNDJSONStream from "ndjson-readablestream";
 
+// Generate UUID using browser crypto API
+const generateUUID = () => {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+
 import appLogo from "../../assets/applogo.svg";
 import styles from "./Chat.module.css";
 
@@ -78,6 +87,8 @@ const Chat = () => {
     const [answers, setAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
     const [streamedAnswers, setStreamedAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
     const [speechUrls, setSpeechUrls] = useState<(string | null)[]>([]);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [feedbackMap, setFeedbackMap] = useState<Record<string, { type: "positive" | "negative"; comment?: string }>>({});
 
     const [showGPT4VOptions, setShowGPT4VOptions] = useState<boolean>(false);
     const [showSemanticRankerOption, setShowSemanticRankerOption] = useState<boolean>(false);
@@ -198,6 +209,11 @@ const Chat = () => {
     const makeApiRequest = async (question: string) => {
         lastQuestionRef.current = question;
 
+        // Generate conversation ID on first question
+        if (!conversationId) {
+            setConversationId(generateUUID());
+        }
+
         error && setError(undefined);
         setIsLoading(true);
         setActiveCitation(undefined);
@@ -287,6 +303,28 @@ const Chat = () => {
         setStreamedAnswers([]);
         setIsLoading(false);
         setIsStreaming(false);
+        setConversationId(null);
+        setFeedbackMap({});
+    };
+
+    const handleFeedbackSubmit = (messageIndex: number, type: "positive" | "negative" | "neutral", comment?: string) => {
+        if (conversationId) {
+            const messageId = `${conversationId}-${messageIndex}`;
+            if (type === "neutral") {
+                // Remove feedback
+                setFeedbackMap(prev => {
+                    const updated = { ...prev };
+                    delete updated[messageId];
+                    return updated;
+                });
+            } else {
+                // Add or update feedback
+                setFeedbackMap(prev => ({
+                    ...prev,
+                    [messageId]: { type, comment }
+                }));
+            }
+        }
     };
 
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
@@ -446,6 +484,9 @@ const Chat = () => {
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
                                                 showSpeechOutputAzure={showSpeechOutputAzure}
                                                 showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                conversationId={conversationId || undefined}
+                                                messageId={conversationId ? `${conversationId}-${index}` : undefined}
+                                                onFeedbackSubmit={handleFeedbackSubmit}
                                             />
                                         </div>
                                     </div>
@@ -469,6 +510,9 @@ const Chat = () => {
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
                                                 showSpeechOutputAzure={showSpeechOutputAzure}
                                                 showSpeechOutputBrowser={showSpeechOutputBrowser}
+                                                conversationId={conversationId || undefined}
+                                                messageId={conversationId ? `${conversationId}-${index}` : undefined}
+                                                onFeedbackSubmit={handleFeedbackSubmit}
                                             />
                                         </div>
                                     </div>

@@ -316,6 +316,48 @@ def config():
     )
 
 
+@bp.route("/feedback", methods=["POST"])
+@authenticated
+async def submit_feedback(auth_claims: dict[str, Any]):
+    """Submit user feedback for a chat message"""
+    if not request.is_json:
+        return jsonify({"error": "request must be json"}), 415
+    
+    try:
+        request_json = await request.get_json()
+        
+        conversation_id = request_json.get("conversation_id")
+        message_id = request_json.get("message_id") 
+        feedback_type = request_json.get("type")  # 'positive' or 'negative'
+        feedback_comment = request_json.get("comment", "")
+        
+        if not conversation_id or not message_id or not feedback_type:
+            return jsonify({"error": "Missing required fields: conversation_id, message_id, type"}), 400
+        
+        if feedback_type not in ['positive', 'negative', 'neutral']:
+            return jsonify({"error": "Feedback type must be 'positive', 'negative', or 'neutral'"}), 400
+        
+        # Get user info from auth context
+        user_oid = auth_claims.get("oid")
+        if not user_oid:
+            return jsonify({"error": "User OID not found"}), 401
+        
+        # For now, just log the feedback since we don't save conversations to CosmosDB automatically
+        # Feedback will be included when users manually save conversations to chat history
+        if feedback_type == "neutral":
+            current_app.logger.info(f"Feedback removed - Conversation: {conversation_id}, Message: {message_id}, User: {user_oid}")
+        else:
+            current_app.logger.info(f"Feedback recorded - Conversation: {conversation_id}, Message: {message_id}, Type: {feedback_type}, Comment: {feedback_comment}, User: {user_oid}")
+        
+        # Note: Feedback is stored in frontend state and will be included when conversation is saved to history
+        
+        return jsonify({"status": "success"}), 200
+        
+    except Exception as error:
+        current_app.logger.exception("Exception in /feedback")
+        return error_response(error, "/feedback")
+
+
 @bp.route("/speech", methods=["POST"])
 async def speech():
     if not request.is_json:

@@ -1,0 +1,135 @@
+.feedbackModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+.feedbackModal {
+    background: #ffffff;
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.feedbackModal h3 {
+    margin: 0 0 8px 0;
+    color: #242424;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.feedbackModal p {
+    margin: 0 0 16px 0;
+    color: #606060;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.feedbackTextarea {
+    width: 100%;
+    border: 1px solid #d1d1d1;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 16px;
+    min-height: 80px;
+    box-sizing: border-box;
+    background: #ffffff;
+    color: #242424;
+}
+
+.feedbackTextarea:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 1px #0078d4;
+}
+
+.feedbackTextarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--colorNeutralBackground3);
+}
+
+.feedbackModalActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.feedbackModalActions button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #d1d1d1;
+    background: #ffffff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 80px;
+    transition: all 0.2s ease;
+}
+
+.cancelButton {
+    color: #242424;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background: #f8f8f8;
+    border-color: #c8c8c8;
+}
+
+.submitButton {
+    background: #0078d4;
+    color: #ffffff;
+    border-color: #0078d4;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: #106ebe;
+    border-color: #106ebe;
+}
+
+.submitButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f3f2f1;
+    color: #a19f9d;
+    border-color: #edebe9;
+}
+
+.cancelButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .feedbackModal {
+        width: 95%;
+        padding: 16px;
+        margin: 16px;
+    }
+
+    .feedbackModalActions {
+        flex-direction: column;
+    }
+
+    .feedbackModalActions button {
+        min-width: auto;
+        width: 100%;
+    }
+}

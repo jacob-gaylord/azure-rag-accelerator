@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from typing import Any, Union
 
 from azure.cosmos.aio import ContainerProxy, CosmosClient
@@ -230,6 +231,156 @@ async def setup_clients():
         current_app.config[CONFIG_COSMOS_HISTORY_CLIENT] = cosmos_client
         current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER] = cosmos_container
         current_app.config[CONFIG_COSMOS_HISTORY_VERSION] = os.environ["AZURE_CHAT_HISTORY_VERSION"]
+
+
+async def save_feedback_to_cosmos(conversation_id: str, message_id: str, 
+                              user_oid: str, feedback_type: str, feedback_comment: str):
+    """Save user feedback for a specific message in a conversation"""
+    try:
+        container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        if not container:
+            raise ValueError("CosmosDB container not configured")
+        
+        # Find the specific message_pair item to update
+        res = container.query_items(
+            query="SELECT * FROM c WHERE c.session_id = @session_id AND c.type = @type AND c.id = @message_id",
+            parameters=[
+                dict(name="@session_id", value=conversation_id),
+                dict(name="@type", value="message_pair"),
+                dict(name="@message_id", value=message_id)
+            ],
+            partition_key=[user_oid, conversation_id],
+        )
+        
+        message_item = None
+        async for page in res.by_page():
+            async for item in page:
+                message_item = item
+                break
+        
+        if not message_item:
+            # Try alternative message ID format (session_id-index)
+            res = container.query_items(
+                query="SELECT * FROM c WHERE c.session_id = @session_id AND c.type = @type",
+                parameters=[
+                    dict(name="@session_id", value=conversation_id),
+                    dict(name="@type", value="message_pair")
+                ],
+                partition_key=[user_oid, conversation_id],
+            )
+            
+            async for page in res.by_page():
+                async for item in page:
+                    if item.get('id') == message_id:
+                        message_item = item
+                        break
+        
+        if not message_item:
+            raise ValueError(f"Message {message_id} not found in conversation {conversation_id}")
+        
+        # Add feedback to the message
+        message_item['feedback'] = {
+            'type': feedback_type,
+            'comment': feedback_comment,
+            'timestamp': datetime.utcnow().isoformat(),
+            'user_oid': user_oid
+        }
+        
+        # Update the message in CosmosDB
+        await container.upsert_item(message_item)
+        
+    except Exception as e:
+        current_app.logger.exception(f"Error saving feedback: {e}")
+        raise
+
+
+async def soft_delete_conversation(conversation_id: str, user_oid: str):
+    """Soft delete a conversation by marking it as deleted"""
+    try:
+        container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        if not container:
+            raise ValueError("CosmosDB container not configured")
+        
+        # Get the session item
+        session_item = await container.read_item(
+            item=conversation_id,
+            partition_key=[user_oid, conversation_id]
+        )
+        
+        # Mark as soft deleted
+        session_item['is_deleted'] = True
+        session_item['deleted_at'] = datetime.utcnow().isoformat()
+        session_item['deleted_by'] = user_oid
+        
+        await container.upsert_item(session_item)
+        
+    except Exception as e:
+        current_app.logger.exception(f"Error soft deleting conversation: {e}")
+        raise
+
+
+async def get_feedback_analytics():
+    """Get feedback analytics for admin users"""
+    try:
+        container: ContainerProxy = current_app.config[CONFIG_COSMOS_HISTORY_CONTAINER]
+        if not container:
+            raise ValueError("CosmosDB container not configured")
+        
+        # Query for messages with feedback
+        res = container.query_items(
+            query="""
+                SELECT 
+                    c.feedback.type as feedback_type,
+                    c.feedback.comment as feedback_comment,
+                    c.feedback.timestamp as feedback_timestamp,
+                    c.session_id,
+                    c.question,
+                    COUNT(1) as count
+                FROM c 
+                WHERE c.type = 'message_pair' 
+                AND IS_DEFINED(c.feedback)
+                GROUP BY c.feedback.type, c.feedback.comment, c.feedback.timestamp, c.session_id, c.question
+            """,
+            enable_cross_partition_query=True
+        )
+        
+        analytics = {
+            'total_feedback': 0,
+            'positive_feedback': 0,
+            'negative_feedback': 0,
+            'recent_feedback': []
+        }
+        
+        async for page in res.by_page():
+            async for item in page:
+                analytics['total_feedback'] += 1
+                if item.get('feedback_type') == 'positive':
+                    analytics['positive_feedback'] += 1
+                elif item.get('feedback_type') == 'negative':
+                    analytics['negative_feedback'] += 1
+                
+                analytics['recent_feedback'].append({
+                    'type': item.get('feedback_type'),
+                    'comment': item.get('feedback_comment'),
+                    'timestamp': item.get('feedback_timestamp'),
+                    'session_id': item.get('session_id'),
+                    'question': item.get('question')
+                })
+        
+        # Sort recent feedback by timestamp (most recent first)
+        analytics['recent_feedback'].sort(
+            key=lambda x: x['timestamp'] if x['timestamp'] else '',
+            reverse=True
+        )
+        
+        # Limit to 100 most recent
+        analytics['recent_feedback'] = analytics['recent_feedback'][:100]
+        
+        return analytics
+        
+    except Exception as e:
+        current_app.logger.exception(f"Error getting feedback analytics: {e}")
+        raise
 
 
 @chat_history_cosmosdb_bp.after_app_serving
