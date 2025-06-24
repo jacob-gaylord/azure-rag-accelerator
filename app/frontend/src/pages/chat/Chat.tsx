@@ -272,7 +272,7 @@ const Chat = () => {
                 setAnswers([...answers, [question, parsedResponse]]);
                 if (typeof parsedResponse.session_state === "string" && parsedResponse.session_state !== "") {
                     const token = client ? await getToken(client) : undefined;
-                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse]], token);
+                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse]], token, feedbackMap);
                 }
             } else {
                 const parsedResponse: ChatAppResponseOrError = await response.json();
@@ -282,7 +282,7 @@ const Chat = () => {
                 setAnswers([...answers, [question, parsedResponse as ChatAppResponse]]);
                 if (typeof parsedResponse.session_state === "string" && parsedResponse.session_state !== "") {
                     const token = client ? await getToken(client) : undefined;
-                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse as ChatAppResponse]], token);
+                    historyManager.addItem(parsedResponse.session_state, [...answers, [question, parsedResponse as ChatAppResponse]], token, feedbackMap);
                 }
             }
             setSpeechUrls([...speechUrls, null]);
@@ -310,6 +310,7 @@ const Chat = () => {
     const handleFeedbackSubmit = (messageIndex: number, type: "positive" | "negative" | "neutral", comment?: string) => {
         if (conversationId) {
             const messageId = `${conversationId}-${messageIndex}`;
+
             if (type === "neutral") {
                 // Remove feedback
                 setFeedbackMap(prev => {
@@ -321,7 +322,7 @@ const Chat = () => {
                 // Add or update feedback
                 setFeedbackMap(prev => ({
                     ...prev,
-                    [messageId]: { type, comment }
+                    [messageId]: { type, comment, timestamp: new Date().toISOString() }
                 }));
             }
         }
@@ -332,6 +333,20 @@ const Chat = () => {
     useEffect(() => {
         getConfig();
     }, []);
+
+    // Save conversation when feedback changes (after initial conversation exists)
+    useEffect(() => {
+        if (Object.keys(feedbackMap).length > 0 && answers.length > 0 && conversationId) {
+            const lastAnswer = answers[answers.length - 1];
+            if (lastAnswer && lastAnswer[1].session_state) {
+                const saveConversation = async () => {
+                    const token = client ? await getToken(client) : undefined;
+                    historyManager.addItem(lastAnswer[1].session_state, answers, token || "", feedbackMap);
+                };
+                saveConversation();
+            }
+        }
+    }, [feedbackMap, answers, conversationId, client, historyManager]);
 
     const handleSettingsChange = (field: string, value: any) => {
         switch (field) {
